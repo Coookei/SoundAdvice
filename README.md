@@ -10,4 +10,6 @@ pnpm install # install dependencies
 
 pnpm run dev    # development to auto reload the server files
 pnpm run start  # production
+
+hello
 ```
