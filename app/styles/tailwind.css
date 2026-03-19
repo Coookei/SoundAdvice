@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@source "../public/html";
+
+/* outside public/ so never exposed by the express static middleware */

@@ -5,8 +5,12 @@
   "main": "app/index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon app/index.js",
+    "dev": "concurrently \"pnpm run dev:server\" \"pnpm run dev:css\"",
+    "dev:server": "nodemon app/index.js",
+    "dev:css": "pnpm run css --watch",
+    "build": "pnpm run css --minify",
     "start": "node app/index.js",
+    "css": "tailwindcss -i app/styles/tailwind.css -o app/public/css/output.css",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,6 +22,9 @@
     "express": "^5.2.1"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.2.1",
+    "tailwindcss": "^4.2.1",
+    "concurrently": "^9.2.1",
     "nodemon": "^3.1.14"
   }
 }
