@@ -17,8 +17,7 @@ pnpm install
 ## Running
 
 ```bash
-pnpm run dev    # starts server + tailwind watcher for development
+pnpm run dev    # development server
 
-pnpm run build  # compiles CSS for production
-pnpm start      # production server
+pnpm run start  # production server
 ```
