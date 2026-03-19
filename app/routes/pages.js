@@ -7,9 +7,9 @@ const html = (file) => join(__dirname, "../public/html", file);
 
 const router = Router();
 
-router.get("/", (req, res) => {
-  res.sendFile(html("index.html"));
-});
+router.get("/", (_req, res) => res.sendFile(html("index.html")));
+router.get("/login", (_req, res) => res.sendFile(html("login.html")));
+router.get("/posts", (_req, res) => res.sendFile(html("posts.html")));
+router.get("/my-posts", (_req, res) => res.sendFile(html("my_posts.html")));
 
-// can add more pages here
 export default router;
