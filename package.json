@@ -1,18 +1,16 @@
 {
   "name": "soundadvice",
   "version": "1.0.0",
-  "description": "",
-  "main": "app/index.js",
+  "description": "A music help blog",
+  "main": "app/server/index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon app/index.js",
-    "start": "node app/index.js",
+    "dev": "nodemon app/server/index.js",
+    "start": "node app/server/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.30.3",
+  "author": "UG17",
+  "packageManager": "pnpm@10.32.1",
   "dependencies": {
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
