@@ -1,0 +1,16 @@
+[
+  {
+    "postId": 1,
+    "username": "foodielover99",
+    "title": "My favourite pasta recipe",
+    "content": "Made this last night and it was incredible. Just olive oil, garlic, cherry tomatoes and whatever pasta you have. Don't overcook the garlic!",
+    "timestamp": "2026-03-20 18:30"
+  },
+  {
+    "postId": 2,
+    "username": "foodiefan123",
+    "title": "My favourite baguette recipe",
+    "content": "Made this at the bakery and was delish!",
+    "timestamp": "2026-03-20 18:30"
+  }
+]

@@ -6,7 +6,7 @@
     <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
     <link rel="stylesheet" href="/css/style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-    <script src="/js/my_posts.js" defer></script>
+    <script src="/js/post_details.js" defer></script>
     <script src="/js/shared.js" defer></script>
   </head>
   <body>
@@ -32,14 +32,30 @@
     </nav>
 
     <main>
-      <section id="myPosts">
-        <h2>Your Posts</h2>
-        <p>See all the posts you've made so far.</p>
-        <p><a class="link_btn" href="/post/new">New Post</a></p>
+      <section id="postView">
+        <div id="postActions">
+          <a id="edit_btn" class="link_btn" href="#">Edit</a>
+          <button id="delete_btn" class="link_btn">Delete</button>
+        </div>
 
-        <i class="fa fa-search" aria-hidden="true"></i>
-        <input class="search_bar" id="search" name="search" type="text" placeholder="Search your posts..." />
+        <h2 id="postTitle">Post Title</h2>
+        <p id="postMeta">Posted by <span id="postAuthor">username</span></p>
+        <div id="postContent">
+          <p>Post content goes here.</p>
+        </div>
+      </section>
+
+      <section id="commentsSection">
+        <h3>Comments</h3>
+        <div id="commentsList"></div>
+
+        <form id="commentForm" action="/comment" method="post">
+          <label for="comment_field">Leave a comment:</label>
+          <textarea id="comment_field" name="comment_field" placeholder="Write your comment..."></textarea>
+          <button type="submit">Submit</button>
+        </form>
       </section>
     </main>
+    <footer></footer>
   </body>
 </html>
