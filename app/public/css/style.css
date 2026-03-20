@@ -350,7 +350,7 @@ legend {
   margin: 1%;
 }
 
-#postForm button[type="submit"] {
+#postForm button[type='submit'] {
   margin: 2% 40%;
   min-width: 150px;
   border: 2px solid #c74402;
@@ -365,6 +365,6 @@ legend {
   transition: background 300ms ease-in-out;
 }
 
-#postForm button[type="submit"]:hover {
+#postForm button[type='submit']:hover {
   background-color: #f2875c;
 }
