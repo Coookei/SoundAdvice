@@ -27,4 +27,5 @@ Copy `.env.example` to `.env` and fill in the database credentials.
 ```bash
 pnpm dev      # start dev server
 pnpm start    # start production server
+pnpm format   # format all files with prettier
 ```
