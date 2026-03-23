@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Sound Advice - Sign Up</title>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <script src="/js/signup.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/"><img id="logo" src="/images/logo.png" /></a>
+      <h1>Welcome to Sound Advice!</h1>
+    </header>
+    <main>
+      <p>Create an account to get started.</p>
+
+      <form method="post" action="/signup" id="signup_form">
+        <label for="username_input">Username:</label>
+        <input type="text" id="username_input" name="username_input" placeholder="Choose a username..." />
+
+        <label for="email_input">Email:</label>
+        <input type="email" id="email_input" name="email_input" placeholder="Enter your email..." />
+
+        <label for="password_input">Password:</label>
+        <input type="password" id="password_input" name="password_input" placeholder="Choose a password..." />
+
+        <label for="confirm_password_input">Confirm Password:</label>
+        <input
+          type="password"
+          id="confirm_password_input"
+          name="confirm_password_input"
+          placeholder="Confirm your password..."
+        />
+
+        <label for="captcha_input">Captcha: 3 + 4 = ?</label>
+        <input type="text" id="captcha_input" name="captcha_input" placeholder="Enter answer..." />
+
+        <button id="signup_btn" type="submit">Sign up</button>
+      </form>
+
+      <p>Already have an account? <a href="/sign-in">Log in here</a></p>
+    </main>
+  </body>
+</html>

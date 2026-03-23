@@ -1,13 +1,12 @@
 <!doctype html>
 <html>
   <head>
-    <title>Sound Advice</title>
+    <title>Sound Advice Admin</title>
     <meta charset="utf-8" />
     <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
     <link rel="stylesheet" href="/css/style.css" />
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-    <script src="/js/index.js" defer></script>
+    <script src="/js/admin_approval.js" defer></script>
     <script src="/js/shared.js" defer></script>
   </head>
   <body>
@@ -26,20 +25,18 @@
 
     <nav>
       <ul>
-        <li class="active"><a href="/">Home</a></li>
+        <li><a href="/">Home</a></li>
         <li><a href="/post/new">New Post</a></li>
         <li><a href="/my-posts">My Posts</a></li>
       </ul>
     </nav>
 
     <main>
-      <section id="postsList">
-        <h2>Latest Posts</h2>
+      <section id="approvalList">
+        <h2>Posts Pending Approval</h2>
+        <p>Review each post and choose to allow or deny it.</p>
 
-        <i class="fa fa-search" aria-hidden="true"></i>
-        <input class="search_bar" id="search" name="search" type="text" placeholder="Search posts..." />
-
-        <p><a class="link_btn" href="/post/new">New Post</a></p>
+        <div id="pendingPosts"></div>
       </section>
     </main>
     <footer></footer>

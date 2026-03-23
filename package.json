@@ -1,31 +1,24 @@
 {
   "name": "soundadvice",
   "version": "1.0.0",
-  "description": "",
-  "main": "app/index.js",
+  "description": "A music help blog",
+  "main": "app/server/index.js",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"pnpm run dev:server\" \"pnpm run dev:css\"",
-    "dev:server": "nodemon app/index.js",
-    "dev:css": "pnpm run css --watch",
-    "build": "pnpm run css --minify",
-    "start": "node app/index.js",
-    "css": "tailwindcss -i app/styles/tailwind.css -o app/public/css/output.css",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon app/server/index.js",
+    "start": "node app/server/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write ."
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.30.3",
+  "author": "UG17",
+  "packageManager": "pnpm@10.32.1",
   "dependencies": {
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "pg": "^8.20.0"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.2.1",
-    "concurrently": "^9.2.1",
     "nodemon": "^3.1.14",
-    "tailwindcss": "^4.2.1"
+    "prettier": "^3.8.1"
   }
 }

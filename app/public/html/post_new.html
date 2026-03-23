@@ -5,9 +5,8 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
     <link rel="stylesheet" href="/css/style.css" />
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-    <script src="/js/index.js" defer></script>
+    <script src="/js/post_new.js" defer></script>
     <script src="/js/shared.js" defer></script>
   </head>
   <body>
@@ -26,20 +25,36 @@
 
     <nav>
       <ul>
-        <li class="active"><a href="/">Home</a></li>
-        <li><a href="/post/new">New Post</a></li>
+        <li><a href="/">Home</a></li>
+        <li class="active"><a href="/post/new">New Post</a></li>
         <li><a href="/my-posts">My Posts</a></li>
       </ul>
     </nav>
 
     <main>
-      <section id="postsList">
-        <h2>Latest Posts</h2>
+      <section>
+        <h2>New Post</h2>
 
-        <i class="fa fa-search" aria-hidden="true"></i>
-        <input class="search_bar" id="search" name="search" type="text" placeholder="Search posts..." />
+        <form action="/api/posts" method="post" id="postForm">
+          <fieldset>
+            <legend>Write your post</legend>
 
-        <p><a class="link_btn" href="/post/new">New Post</a></p>
+            <label for="title_field">Title:</label>
+            <input id="title_field" name="title_field" type="text" placeholder="Post title..." required />
+
+            <label for="content_field">Content:</label>
+            <textarea
+              id="content_field"
+              name="content_field"
+              placeholder="Write your thoughts here..."
+              required
+            ></textarea>
+
+            <button type="submit" id="post_btn">Post</button>
+          </fieldset>
+        </form>
+
+        <p><a href="/">Cancel</a></p>
       </section>
     </main>
     <footer></footer>
