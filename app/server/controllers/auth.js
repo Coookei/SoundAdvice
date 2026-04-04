@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import { sendEmail } from '../email.js';
 import { generateCaptcha, verifyCaptcha } from '../captcha.js';
 import { createSession, destroySession, regenerateSession } from '../middleware/session.js';
+import pool from '../db.js';
 import * as authQueries from '../queries/auth.js';
 import * as userQueries from '../queries/users.js';
 
@@ -104,7 +105,17 @@ export const verify2fa = async (req, res) => {
   const match = crypto.timingSafeEqual(codeBuffer, storedBuffer);
 
   if (!match) {
-    // TODO: increment two_factor_attempts and lock out after 3-5 failures
+    const { rows } = await pool.query(
+      'UPDATE sessions SET two_factor_attempts = two_factor_attempts + 1 WHERE user_id = $1 AND pending = true RETURNING two_factor_attempts',
+      [req.pendingUserId]
+    );
+
+    if (rows[0]?.two_factor_attempts >= 3) {
+      await destroySession(req, res);
+      await authQueries.clearEmailCode(req.pendingUserId);
+      return res.status(401).json({ error: 'Too many attempts, please log in again' });
+    }
+
     return res.status(401).json({ error: 'Invalid code' });
   }
 
