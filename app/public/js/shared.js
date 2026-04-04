@@ -1,12 +1,24 @@
-// Function to add username in top right corner of every page after user has logged in
-async function displayUsername() {
-  const response = await fetch('../json/login_attempt.json');
-  const user_data = await response.json();
+async function displayUsernameDropdown() {
+  const res = await fetch('/api/auth/me');
+  const { user } = await res.json();
 
-  document.querySelector('#login_link').textContent = user_data.username;
+  if (!user) {
+    // show login button if not logged in
+    document.getElementById('login_btn').style.display = '';
+    return;
+  }
+
+  // show username and dropdown if logged in
+  document.getElementById('user_dropdown').style.display = '';
+  document.getElementById('login_link').childNodes[0].textContent = user.username + ' ';
+
+  if (user.is_admin) {
+    // only show admin panel link if user is admin
+    document.getElementById('admin_panel_link').style.display = '';
+  }
 }
 
-displayUsername();
+displayUsernameDropdown();
 
 // logout button will call the logout API and redirect to sign in
 document.querySelector('#logout_btn')?.addEventListener('click', async (e) => {
