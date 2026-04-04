@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { errorHandler, notFoundHandler } from '../middleware/error.js';
 import pageRoutes from './pages.js';
+import authRoutes from './auth.js';
 import userRoutes from './users.js';
 import postRoutes from './posts.js';
 
@@ -11,6 +12,7 @@ indexRouter.use('/', pageRoutes);
 
 // API routes
 const api = Router();
+api.use('/auth', authRoutes);
 api.use('/users', userRoutes);
 api.use('/posts', postRoutes);
 
