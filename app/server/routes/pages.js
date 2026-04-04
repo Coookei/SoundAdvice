@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { requireAuthPage, requireAdminPage } from '../middleware/auth.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const html = (file) => join(__dirname, '../../public/html', file);
@@ -11,11 +12,11 @@ router.get('/', (_req, res) => res.sendFile(html('index.html')));
 router.get('/sign-in', (_req, res) => res.sendFile(html('signin.html')));
 router.get('/sign-up', (_req, res) => res.sendFile(html('signup.html')));
 router.get('/sign-in/2fa', (_req, res) => res.sendFile(html('signin_2fa.html')));
-router.get('/post/new', (_req, res) => res.sendFile(html('post_new.html')));
-router.get('/post/:id', (_req, res) => res.sendFile(html('post_details.html')));
-router.get('/post/:id/edit', (_req, res) => res.sendFile(html('post_edit.html')));
-router.get('/my-posts', (_req, res) => res.sendFile(html('my_posts.html')));
-router.get('/profile', (_req, res) => res.sendFile(html('profile.html')));
-router.get('/admin/approval', (_req, res) => res.sendFile(html('admin_approval.html')));
+router.get('/my-posts', requireAuthPage, (_req, res) => res.sendFile(html('my_posts.html'))); //protected
+router.get('/profile', requireAuthPage, (_req, res) => res.sendFile(html('profile.html'))); // protected
+router.get('/post/new', requireAuthPage, (_req, res) => res.sendFile(html('post_new.html'))); // protected
+router.get('/post/:id', (_req, res) => res.sendFile(html('post_details.html'))); // guests can view posts so no auth
+router.get('/post/:id/edit', requireAuthPage, (_req, res) => res.sendFile(html('post_edit.html'))); // edit post is protected
+router.get('/admin/approval', requireAdminPage, (_req, res) => res.sendFile(html('admin_approval.html'))); // admin protection
 
 export default router;
