@@ -7,3 +7,11 @@ async function displayUsername() {
 }
 
 displayUsername();
+
+// logout button will call the logout API and redirect to sign in
+document.querySelector('#logout_btn')?.addEventListener('click', async (e) => {
+  e.preventDefault();
+  const res = await fetch('/api/auth/logout', { method: 'POST' });
+  const data = await res.json();
+  window.location.href = data.redirect || '/sign-in';
+});
