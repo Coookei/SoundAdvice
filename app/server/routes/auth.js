@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { register, login, verify2fa, logout, me } from '../controllers/auth.js';
+import { getCaptcha, register, login, verify2fa, logout, me } from '../controllers/auth.js';
 
 const router = Router();
 
+router.get('/captcha', getCaptcha);
 router.post('/register', register);
 router.post('/login', login);
 router.post('/verify-2fa', verify2fa);

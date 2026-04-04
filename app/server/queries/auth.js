@@ -1,7 +1,7 @@
 import pool from '../db.js';
 
 export const findByEmail = async (email) => {
-  const { rows } = await pool.query('SELECT id, password FROM users WHERE email = $1', [email]);
+  const { rows } = await pool.query('SELECT id, password, is_admin FROM users WHERE email = $1', [email]);
   return rows[0];
 };
 
