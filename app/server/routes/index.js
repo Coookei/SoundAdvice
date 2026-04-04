@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { errorHandler, notFoundHandler } from '../middleware/error.js';
 import pageRoutes from './pages.js';
 import userRoutes from './users.js';
+import postRoutes from './posts.js';
 
 const indexRouter = Router();
 
@@ -11,7 +12,7 @@ indexRouter.use('/', pageRoutes);
 // API routes
 const api = Router();
 api.use('/users', userRoutes);
-// TODO add future routes here
+api.use('/posts', postRoutes);
 
 // API error handling
 api.use(notFoundHandler);
