@@ -31,7 +31,8 @@ export const register = async (req, res) => {
   try {
     await authQueries.createUser(username, email, hashed);
   } catch (err) {
-    // unique constraint violation — don't reveal which field
+    // prevents account enumeration by ALWAYS returning same success message
+    // whether actual registration success or duplicate username/email error (Postgres error 23505, unique constraint violation).
     if (err.code === '23505') {
       return res.json({ message: 'Registration successful' });
     }
@@ -77,10 +78,6 @@ export const login = async (req, res) => {
 
 export const verify2fa = async (req, res) => {
   const { code } = req.body;
-
-  if (!req.pendingUserId) {
-    return res.status(401).json({ error: 'Please log in first' });
-  }
 
   if (!code) {
     return res.status(400).json({ error: 'Code is required' });
