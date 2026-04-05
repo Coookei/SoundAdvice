@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import * as sessionQueries from '../queries/sessions.js';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 // parse the sid cookie from the raw cookie header
 function parseSid(req) {
   if (!req.headers.cookie) return null;
@@ -9,16 +11,19 @@ function parseSid(req) {
 }
 
 function setSidCookie(res, sid, maxAge) {
+  // Use Secure cookies in production to ensure the cookie is only sent over HTTPS
   // HttpOnly prevents javascript on page reading so prevents XSS stealing cookies
   // SameSite=Strict prevents CSRF
-  // Path=/ makes it available on all routes
+  // Path=/ makes available on all routes
   // Max-Age sets expiry
-  // TODO in production add 'Secure;' to cookies to only send cookies over HTTPS
-  res.setHeader('Set-Cookie', `sid=${sid}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${Math.floor(maxAge / 1000)}`);
+  res.setHeader(
+    'Set-Cookie',
+    `sid=${sid}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${Math.floor(maxAge / 1000)}${isProduction ? '; Secure' : ''}`
+  );
 }
 
 function clearSidCookie(res) {
-  res.setHeader('Set-Cookie', `sid=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`);
+  res.setHeader('Set-Cookie', `sid=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${isProduction ? '; Secure' : ''}`);
 }
 
 const ADMIN_MAX_AGE = 60 * 60 * 1000; // admins only have 1 hour session
