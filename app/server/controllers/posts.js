@@ -7,7 +7,7 @@ export const getPosts = async (req, res) => {
 
 export const getPostById = async (req, res) => {
   const { id } = req.params;
-  const post = await postQueries.findById(id);
+  const post = await postQueries.findApprovedById(id);
 
   if (!post) return res.status(404).json({ error: 'Post not found' });
 

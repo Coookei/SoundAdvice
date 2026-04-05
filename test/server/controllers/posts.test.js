@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getPosts } from '../../../app/server/controllers/posts.js';
+import { getPosts, getPostById } from '../../../app/server/controllers/posts.js';
 import pool from '../../../app/server/db.js';
 
 describe('Testing getPosts', function () {
@@ -28,4 +28,25 @@ describe('Testing getPosts', function () {
   });
 });
 
-describe('Testing getPostById', function () {});
+describe('Testing getPostById', function () {
+  it('should return the post when it is approved', async function () {
+    // mock database response for an approved post
+    pool.query = async () => ({
+      rows: [{ id: 1, title: 'First Post', status: 'approved' }],
+    });
+
+    // imitate an incoming req and the response
+    var req = { params: { id: '1' } };
+    var res = {
+      json: function (data) {
+        res.body = data;
+      },
+    };
+
+    // call funcion we testing with mocked req and res
+    await getPostById(req, res);
+
+    // assert
+    expect(res.body.post).to.deep.equal({ id: 1, title: 'First Post', status: 'approved' });
+  });
+});
