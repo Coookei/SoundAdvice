@@ -1,6 +1,7 @@
 import express from 'express';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { headersMiddleware } from './middleware/headers.js';
 import { sessionMiddleware } from './middleware/session.js';
 import indexRouter from './routes/index.js';
 
@@ -9,6 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 // middleware
+app.use(headersMiddleware); // security headers applied to every response
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(sessionMiddleware); // attach req.userId from session cookie on every request
