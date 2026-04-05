@@ -1,19 +1,19 @@
-// reusable rate limiter — apply to any route with different config
-const stores = new Map();
-
+// reusable rate limiter, apply to any route with different config and independent tracking per route
 export function rateLimit({ max = 5, windowMs = 10 * 60 * 1000, blockMs = 15 * 60 * 1000 } = {}) {
   const store = new Map();
-  stores.set(store, true);
 
   // cleanup expired entries every 10 mins
-  setInterval(() => {
-    const now = Date.now();
-    for (const [ip, entry] of store) {
-      if (now > entry.resetAt && (!entry.blockedUntil || now > entry.blockedUntil)) {
-        store.delete(ip);
+  setInterval(
+    () => {
+      const now = Date.now();
+      for (const [ip, entry] of store) {
+        if (now > entry.resetAt && (!entry.blockedUntil || now > entry.blockedUntil)) {
+          store.delete(ip);
+        }
       }
-    }
-  }, 10 * 60 * 1000);
+    },
+    10 * 60 * 1000
+  );
 
   return (req, res, next) => {
     const ip = req.ip;
