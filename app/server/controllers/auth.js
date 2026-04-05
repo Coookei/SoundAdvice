@@ -71,11 +71,11 @@ export const login = async (req, res) => {
     await authQueries.setEmailCode(user.id, codeHash, expiresAt);
     await sendEmail(email, 'Your SoundAdvice login code', `Your code is: ${code}. It expires in 10 minutes.`);
 
-    await createSession(res, user.id, true);
+    await createSession(res, user.id, true, true); // true for pending session, true as admin
     return res.json({ message: '2FA code sent', redirect: '/sign-in/2fa' });
   }
 
-  await createSession(res, user.id, false);
+  await createSession(res, user.id, false, false); // user session, false for no 2fa pending, false for not admin
   res.json({ message: 'Login successful', redirect: '/' });
 };
 
@@ -119,7 +119,7 @@ export const verify2fa = async (req, res) => {
 
   // 2FA passed, regenerate session to prevent fixation
   await authQueries.clearEmailCode(req.pendingUserId);
-  await regenerateSession(req, res, req.pendingUserId);
+  await regenerateSession(req, res, req.pendingUserId, true); // true as admin to get shorter session
 
   res.json({ message: 'Login successful', redirect: '/' });
 };

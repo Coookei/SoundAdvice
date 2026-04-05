@@ -21,9 +21,11 @@ function clearSidCookie(res) {
   res.setHeader('Set-Cookie', `sid=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`);
 }
 
-const SESSION_MAX_AGE = 30 * 60 * 1000;
+const ADMIN_MAX_AGE = 60 * 60 * 1000; // admins only have 1 hour session
+const USER_MAX_AGE = 24 * 60 * 60 * 1000; // users session last 1 day
+const PENDING_MAX_AGE = 10 * 60 * 1000; // 2FA flow lasts 10 minutes
 
-// runs on every request — looks up session and attaches userId or pendingUserId
+// runs on every request to look up session and attaches userId or pendingUserId
 export async function sessionMiddleware(req, res, next) {
   req.userId = null;
   req.pendingUserId = null;
@@ -38,7 +40,7 @@ export async function sessionMiddleware(req, res, next) {
     return next();
   }
 
-  // expired — delete it and clear cookie
+  // expired so delete it and clear cookie
   if (new Date() > new Date(session.expires_at)) {
     await sessionQueries.deleteSessionBySid(sid);
     clearSidCookie(res);
@@ -54,15 +56,18 @@ export async function sessionMiddleware(req, res, next) {
   next();
 }
 
-// called after 2FA success — creates  full session
-export async function createSession(res, userId, pending = false) {
+// called after 2FA success and creates  full session
+// pending = true, session is only for holding userId until 2FA is completed
+// isAdmin = true, session is for admin user and should have shorter expiry
+export async function createSession(res, userId, pending = false, isAdmin = false) {
   // the sid cant be guessed as massive size so no need to sign it
   const sid = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + SESSION_MAX_AGE);
+  const maxAge = pending ? PENDING_MAX_AGE : isAdmin ? ADMIN_MAX_AGE : USER_MAX_AGE;
+  const expiresAt = new Date(Date.now() + maxAge);
 
   await sessionQueries.insertSession(sid, userId, pending, expiresAt);
 
-  setSidCookie(res, sid, SESSION_MAX_AGE);
+  setSidCookie(res, sid, maxAge);
   return sid;
 }
 
@@ -75,8 +80,8 @@ export async function destroySession(req, res) {
   clearSidCookie(res);
 }
 
-// called after 2FA — destroy old session and create a new one to prevent fixation
-export async function regenerateSession(req, res, userId) {
+// called after 2FA to destroy old session and create a new one to prevent fixation
+export async function regenerateSession(req, res, userId, isAdmin = false) {
   await destroySession(req, res);
-  return createSession(res, userId, false);
+  return createSession(res, userId, false, isAdmin);
 }
