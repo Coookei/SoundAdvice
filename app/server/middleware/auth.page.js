@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import * as userQueries from '../queries/users.js';
 
 // redirects unauthenticated users to sign in
 export function redirectIfGuest(req, res, next) {
@@ -41,9 +41,9 @@ export async function redirectIfNotAdmin(req, res, next) {
     }
     return res.redirect('/sign-in');
   }
-  const { rows } = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.userId]);
+  const admin = await userQueries.isAdmin(req.userId);
 
-  if (!rows[0]?.is_admin) {
+  if (!admin) {
     return res.redirect('/'); // send to homepage if not admin
   }
   next();

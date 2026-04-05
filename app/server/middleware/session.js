@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import pool from '../db.js';
+import * as sessionQueries from '../queries/sessions.js';
 
 // parse the sid cookie from the raw cookie header
 function parseSid(req) {
@@ -9,20 +9,19 @@ function parseSid(req) {
 }
 
 function setSidCookie(res, sid, maxAge) {
-  res.setHeader(
-    'Set-Cookie',
-    `sid=${sid}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${Math.floor(maxAge / 1000)}`
-  );
+  // HttpOnly prevents javascript on page reading so prevents XSS stealing cookies
+  // SameSite=Strict prevents CSRF
+  // Path=/ makes it available on all routes
+  // Max-Age sets expiry
+  // TODO in production add 'Secure;' to cookies to only send cookies over HTTPS
+  res.setHeader('Set-Cookie', `sid=${sid}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${Math.floor(maxAge / 1000)}`);
 }
 
 function clearSidCookie(res) {
-  res.setHeader(
-    'Set-Cookie',
-    `sid=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`
-  );
+  res.setHeader('Set-Cookie', `sid=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`);
 }
 
-const SESSION_MAX_AGE = 30 * 60 * 1000; 
+const SESSION_MAX_AGE = 30 * 60 * 1000;
 
 // runs on every request — looks up session and attaches userId or pendingUserId
 export async function sessionMiddleware(req, res, next) {
@@ -32,21 +31,16 @@ export async function sessionMiddleware(req, res, next) {
   const sid = parseSid(req);
   if (!sid) return next();
 
-  const { rows } = await pool.query(
-    'SELECT user_id, pending, expires_at FROM sessions WHERE sid = $1',
-    [sid]
-  );
+  const session = await sessionQueries.findSessionBySid(sid);
 
-  if (rows.length === 0) {
+  if (!session) {
     clearSidCookie(res);
     return next();
   }
 
-  const session = rows[0];
-
   // expired — delete it and clear cookie
   if (new Date() > new Date(session.expires_at)) {
-    await pool.query('DELETE FROM sessions WHERE sid = $1', [sid]);
+    await sessionQueries.deleteSessionBySid(sid);
     clearSidCookie(res);
     return next();
   }
@@ -62,13 +56,11 @@ export async function sessionMiddleware(req, res, next) {
 
 // called after 2FA success — creates  full session
 export async function createSession(res, userId, pending = false) {
+  // the sid cant be guessed as massive size so no need to sign it
   const sid = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + SESSION_MAX_AGE);
 
-  await pool.query(
-    'INSERT INTO sessions (sid, user_id, pending, expires_at) VALUES ($1, $2, $3, $4)',
-    [sid, userId, pending, expiresAt]
-  );
+  await sessionQueries.insertSession(sid, userId, pending, expiresAt);
 
   setSidCookie(res, sid, SESSION_MAX_AGE);
   return sid;
@@ -78,7 +70,7 @@ export async function createSession(res, userId, pending = false) {
 export async function destroySession(req, res) {
   const sid = parseSid(req);
   if (sid) {
-    await pool.query('DELETE FROM sessions WHERE sid = $1', [sid]);
+    await sessionQueries.deleteSessionBySid(sid);
   }
   clearSidCookie(res);
 }

@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import * as userQueries from '../queries/users.js';
 
 // protects guest only API endpoints e.g signin/up
 export function requireGuest(req, res, next) {
@@ -41,9 +41,9 @@ export async function requireAdmin(req, res, next) {
     return res.status(401).json({ error: 'Not logged in' });
   }
 
-  const { rows } = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.userId]);
+  const admin = await userQueries.isAdmin(req.userId);
 
-  if (!rows[0]?.is_admin) {
+  if (!admin) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 

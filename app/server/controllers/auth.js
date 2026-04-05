@@ -3,8 +3,8 @@ import bcrypt from 'bcrypt';
 import { sendEmail } from '../email.js';
 import { generateCaptcha, verifyCaptcha } from '../captcha.js';
 import { createSession, destroySession, regenerateSession } from '../middleware/session.js';
-import pool from '../db.js';
 import * as authQueries from '../queries/auth.js';
+import * as sessionQueries from '../queries/sessions.js';
 import * as userQueries from '../queries/users.js';
 
 // pre-computed hash so we can run bcrypt.compare even when user doesn't exist — prevents timing-based account enumeration
@@ -26,6 +26,8 @@ export const register = async (req, res) => {
     return res.status(400).json({ error: 'Incorrect captcha, try again' });
   }
 
+  // hash password with shared pepper, bcrypt generates unique salt
+  // for each password hash with cost factor 12
   const hashed = await bcrypt.hash(password + process.env.PEPPER, 12);
 
   try {
@@ -102,12 +104,9 @@ export const verify2fa = async (req, res) => {
   const match = crypto.timingSafeEqual(codeBuffer, storedBuffer);
 
   if (!match) {
-    const { rows } = await pool.query(
-      'UPDATE sessions SET two_factor_attempts = two_factor_attempts + 1 WHERE user_id = $1 AND pending = true RETURNING two_factor_attempts',
-      [req.pendingUserId]
-    );
+    const row = await sessionQueries.increment2faAttempts(req.pendingUserId);
 
-    if (rows[0]?.two_factor_attempts >= 3) {
+    if (row?.two_factor_attempts >= 3) {
       await destroySession(req, res);
       await authQueries.clearEmailCode(req.pendingUserId);
       return res.status(401).json({ error: 'Too many attempts, please log in again' });
