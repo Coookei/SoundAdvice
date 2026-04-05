@@ -13,10 +13,10 @@ export const createUser = async (username, email, hashedPassword) => {
   return rows[0];
 };
 
-export const setEmailCode = async (userId, code, expiresAt) => {
+export const setEmailCode = async (userId, codeHash, expiresAt) => {
   await pool.query(
     'UPDATE users SET email_code = $1, email_code_expires = $2 WHERE id = $3',
-    [code, expiresAt, userId]
+    [codeHash, expiresAt, userId]
   );
 };
 

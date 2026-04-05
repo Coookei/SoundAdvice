@@ -1,13 +1,13 @@
-import crypto from 'crypto';
 import bcrypt from 'bcrypt';
-import { sendEmail } from '../email.js';
+import crypto from 'crypto';
 import { generateCaptcha, verifyCaptcha } from '../captcha.js';
+import { sendEmail } from '../email.js';
 import { createSession, destroySession, regenerateSession } from '../middleware/session.js';
 import * as authQueries from '../queries/auth.js';
 import * as sessionQueries from '../queries/sessions.js';
 import * as userQueries from '../queries/users.js';
 
-// pre-computed hash so we can run bcrypt.compare even when user doesn't exist — prevents timing-based account enumeration
+// pre computed hash so we can run bcrypt.compare even when user doesn't exist - prevents timing-based account enumeration
 const FAKE_HASH = await bcrypt.hash('fake-password-for-timing', 12);
 
 export const getCaptcha = (_req, res) => {
@@ -66,9 +66,10 @@ export const login = async (req, res) => {
   if (user.is_admin) {
     const code = crypto.randomInt(100000, 999999).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    const codeHash = hmacHash(code); // hash with HMAC and 2FA secret stored in .env. attacker unable to get 2fa code even if db compromised
 
-    await authQueries.setEmailCode(user.id, code, expiresAt);
-    await sendEmail(email, 'Your SoundAdvice login code', `Your code is: ${code}`);
+    await authQueries.setEmailCode(user.id, codeHash, expiresAt);
+    await sendEmail(email, 'Your SoundAdvice login code', `Your code is: ${code}. It expires in 10 minutes.`);
 
     await createSession(res, user.id, true);
     return res.json({ message: '2FA code sent', redirect: '/sign-in/2fa' });
@@ -98,10 +99,11 @@ export const verify2fa = async (req, res) => {
     return res.status(401).json({ error: 'Code expired, please log in again' });
   }
 
-  // timing-safe comparison
-  const codeBuffer = Buffer.from(code.toString().padEnd(6));
-  const storedBuffer = Buffer.from(user.email_code.padEnd(6));
-  const match = crypto.timingSafeEqual(codeBuffer, storedBuffer);
+  // timing safe comparison of HMAC hashes
+  const submittedHash = hmacHash(code.toString());
+  const submittedBuffer = Buffer.from(submittedHash, 'hex');
+  const storedBuffer = Buffer.from(user.email_code, 'hex');
+  const match = crypto.timingSafeEqual(submittedBuffer, storedBuffer);
 
   if (!match) {
     const row = await sessionQueries.increment2faAttempts(req.pendingUserId);
@@ -115,7 +117,7 @@ export const verify2fa = async (req, res) => {
     return res.status(401).json({ error: 'Invalid code' });
   }
 
-  // 2FA passed — regenerate session to prevent fixation
+  // 2FA passed, regenerate session to prevent fixation
   await authQueries.clearEmailCode(req.pendingUserId);
   await regenerateSession(req, res, req.pendingUserId);
 
@@ -135,3 +137,7 @@ export const me = async (req, res) => {
   const user = await userQueries.findById(req.userId);
   res.json({ user: user || null });
 };
+
+function hmacHash(value) {
+  return crypto.createHmac('sha256', process.env['2FA_SECRET']).update(value).digest('hex');
+}
