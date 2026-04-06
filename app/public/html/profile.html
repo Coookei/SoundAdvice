@@ -32,12 +32,43 @@
       </ul>
     </nav>
 
-    <main>
-      <section>
-        <h2>Profile</h2>
-        <p>profile page</p>
+    <main class="profile-container">
+      <section class="profile-header">
+        <div class="profile-banner"> </div>
+
+        <img id="profile_picture" class="profile-pic" alt = "Profile picture" />
+
+        <div class="pfp-controls"> 
+          <input type="file" id="pfp_input" accept="image/*" />
+          <button id="upload_pfp_btn"> Update Profile Picture </button>
+        </div>
+
+        <div class="profile-info">
+          <h2 id="profile_username"> Username </h2>
+          <p id="profile_email"> </p>
+          <p id="profile_joined"> </p>
+          <p id="profile_bio"> </p>
+        </div>
       </section>
+
+      <section class="profile-edit"> 
+        <h3> Edit Profile</h3>
+
+        <!-- BIO -->
+         <textarea id="bio_input" placeholder="Update your bio"> </textarea>
+         <button id="save_bio_btn"> Save Bio </button>
+
+        <!-- Password -->
+         <input type="password" id="current_password" placeholder="Current Password">
+         <input type="password" id="new_password" placeholder="New Password">
+          <button id="update_password_btn"> Update Password </button>
+      </section>
+
+      <section class="profile-posts">
+        <h3> User Posts </h3>
+        <div id="posts_container"> </div>
+      </section>
+
     </main>
-    <footer></footer>
   </body>
 </html>

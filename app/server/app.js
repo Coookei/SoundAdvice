@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path'; 
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { headersMiddleware } from './middleware/headers.js';
@@ -23,4 +24,6 @@ app.use('/', indexRouter);
 // not found 404 page
 app.use((_req, res) => res.status(404).send('404 - Page not found'));
 
+// pfp upload
+app.use('/uploads', express.static(path.resolve('uploads'))); 
 export default app;

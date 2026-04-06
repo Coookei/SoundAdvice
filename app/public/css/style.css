@@ -368,3 +368,22 @@ legend {
 #postForm button[type='submit']:hover {
   background-color: #f2875c;
 }
+
+/* profile page posts styling */
+.post-card {
+  border-bottom: 1px solid #eee;
+  padding: 10px 0;
+}
+
+.post-card:last-child{
+  border-bottom: none;
+}
+
+.post-title{
+  font-weight: bold;
+}
+
+.post-meta {
+  font-size: 12px;
+  color: gray; 
+}
