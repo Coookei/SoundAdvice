@@ -1,4 +1,5 @@
 import * as postQueries from '../queries/posts.js';
+import * as userQueries from '../queries/users.js';
 
 export const getPosts = async (req, res) => {
   const posts = await postQueries.findAllApproved();
@@ -7,9 +8,95 @@ export const getPosts = async (req, res) => {
 
 export const getPostById = async (req, res) => {
   const { id } = req.params;
-  const post = await postQueries.findApprovedById(id);
+  const post = await postQueries.findById(id);
 
   if (!post) return res.status(404).json({ error: 'Post not found' });
 
+  if (post.status === 'approved') {
+    // approved posts are visible to all including guests
+    return res.json({ post });
+  }
+
+  // pending/rejected posts only visible to the author or admin
+  const isAuthor = req.userId === post.user_id;
+  const isAdmin = req.userId ? await userQueries.isAdmin(req.userId) : false;
+
+  if (!isAuthor && !isAdmin) return res.status(404).json({ error: 'Post not found' }); // 404 to avoid reveling the existence of post
+
   res.json({ post });
+};
+
+export const createPost = async (req, res) => {
+  const { title, content } = req.body;
+
+  if (!title || !content) {
+    return res.status(400).json({ error: 'Title and content are required' });
+  }
+
+  // create new post with authd users id, default status is pending
+  const post = await postQueries.create(req.userId, title, content);
+  res.status(201).json({ post });
+};
+
+export const updatePost = async (req, res) => {
+  const { id } = req.params;
+  const { title, content } = req.body;
+
+  const post = await postQueries.findById(id);
+  if (!post) return res.status(404).json({ error: 'Post not found' });
+
+  // only post author or an admin can update posts
+  const isAuthor = req.userId === post.user_id;
+  const isAdmin = await userQueries.isAdmin(req.userId);
+
+  if (!isAuthor && !isAdmin) return res.status(403).json({ error: 'Not authorised' }); // should this be 404 as well to hide existence?
+
+  if (!title || !content) {
+    return res.status(400).json({ error: 'Title and content are required' });
+  }
+
+  const updated = await postQueries.update(id, title, content);
+  res.json({ post: updated });
+};
+
+export const deletePost = async (req, res) => {
+  const { id } = req.params;
+
+  const post = await postQueries.findById(id);
+  if (!post) return res.status(404).json({ error: 'Post not found' });
+
+  // post author or admin can delete posts
+  const isAuthor = req.userId === post.user_id;
+  const isAdmin = await userQueries.isAdmin(req.userId);
+
+  if (!isAuthor && !isAdmin) return res.status(403).json({ error: 'Not authorised' }); // should this be 404 as well to hide existence?
+
+  await postQueries.remove(id);
+  res.json({ message: 'Post deleted' });
+};
+
+export const getMyPosts = async (req, res) => {
+  const posts = await postQueries.findByUserId(req.userId);
+  res.json({ posts });
+};
+
+export const getAdminPosts = async (req, res) => {
+  const posts = await postQueries.findAll();
+  res.json({ posts });
+};
+
+export const updatePostStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (status !== 'approved' && status !== 'rejected') {
+    return res.status(400).json({ error: 'Status must be approved or rejected' });
+  }
+
+  const post = await postQueries.findById(id);
+  if (!post) return res.status(404).json({ error: 'Post not found' });
+
+  // admins can update post status to approved or rejected only
+  const updated = await postQueries.updateStatus(id, status);
+  res.json({ post: updated });
 };
