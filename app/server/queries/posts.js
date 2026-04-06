@@ -39,10 +39,11 @@ export const create = async (userId, title, content) => {
   return rows[0];
 };
 
-export const update = async (id, title, content) => {
+export const update = async (id, title, content, status = 'pending') => {
+  // default to when updating post should go back to pending
   const { rows } = await pool.query(
-    'UPDATE posts SET title = $1, content = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
-    [title, content, id]
+    'UPDATE posts SET title = $1, content = $2, status = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
+    [title, content, status, id]
   );
   return rows[0];
 };

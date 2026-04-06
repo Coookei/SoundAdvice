@@ -55,7 +55,9 @@ export const updatePost = async (req, res) => {
     return res.status(400).json({ error: 'Title and content are required' });
   }
 
-  const updated = await postQueries.update(id, title, content);
+  // if an admin updates post, LEAVE state as it, i.e. if approved STAYS approved
+  // whereas if user updates post goes back to pending status
+  const updated = await postQueries.update(id, title, content, isAdmin ? post.status : 'pending');
   res.json({ post: updated });
 };
 
