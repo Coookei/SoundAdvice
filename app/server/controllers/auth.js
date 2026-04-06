@@ -76,6 +76,10 @@ export const login = async (req, res) => {
     await authQueries.setEmailCode(user.id, codeHash, expiresAt);
     await sendEmail(email, 'Your SoundAdvice login code', `Your code is: ${code}. It expires in 10 minutes.`);
 
+    // if user starts 2fa flow but then doesnt complete,  and then logs in again in diff browser, without the previous cookie,
+    // then the old 2fa pending sesion will be there and then can be locked out by the 2fa attempts limit from previous session, so always CLEAR previous pending sessoins.
+    await sessionQueries.deletePendingSessionsByUserId(user.id);
+
     await createSession(res, user.id, true, true); // true for pending session, true as admin
     await logAuthEvent('login_2fa_pending', { userId: user.id, ip: req.ip });
     return res.json({ message: '2FA code sent', redirect: '/sign-in/2fa' });
