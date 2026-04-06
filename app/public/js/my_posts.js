@@ -1,156 +1,79 @@
-// Function to load posts made by user who is currently logged in
 async function loadPosts() {
-  // Load posts data
-  const post_response = await fetch('../json/posts.json');
-  const post_data = await post_response.json();
+  const response = await fetch('/api/posts/my');
+  const { posts } = await response.json();
 
-  // Load login data
-  const login_response = await fetch('../json/login_attempt.json');
-  const login_data = await login_response.json();
+  const postList = document.getElementById('myPosts');
 
-  // Remove current posts
-  let postList = document.getElementById('myPosts');
+  for (let i = 0; i < posts.length; i++) {
+    const post = posts[i];
 
-  for (let i = 0; i < postList.children.length; i++) {
-    if (postList.children[i].nodeName == 'article') {
-      postList.removeChild(postList.children[i]);
-    }
-  }
+    const article = document.createElement('article');
+    article.classList.add('post');
 
-  // Add posts made by current user
-  for (let i = 0; i < post_data.length; i++) {
-    let author = post_data[i].username;
+    const link = document.createElement('a');
+    link.href = '/post/' + post.id;
 
-    // Check usernames match on each post
-    if (author === login_data.username) {
-      let timestamp = post_data[i].timestamp;
-      let title = post_data[i].title;
-      let content = post_data[i].content;
-      let postId = post_data[i].postId;
+    const title = document.createElement('h3');
+    title.textContent = post.title;
 
-      let postContainer = document.createElement('article');
-      postContainer.classList.add('post');
-      let fig = document.createElement('figure');
-      postContainer.appendChild(fig);
+    link.appendChild(title);
+    article.appendChild(link);
 
-      let postIdContainer = document.createElement('h6');
-      postIdContainer.textContent = postId;
-      postIdContainer.hidden = true;
-      postId.id = 'postId';
-      postContainer.appendChild(postIdContainer);
+    const meta = document.createElement('p');
+    meta.textContent = new Date(post.created_at).toLocaleDateString();
+    article.appendChild(meta);
 
-      let img = document.createElement('img');
-      let figcap = document.createElement('figcaption');
-      fig.appendChild(img);
-      fig.appendChild(figcap);
+    const status = document.createElement('span');
+    status.textContent = post.status;
+    meta.appendChild(document.createTextNode(' - '));
+    meta.appendChild(status);
 
-      let titleContainer = document.createElement('h3');
-      titleContainer.textContent = title;
-      figcap.appendChild(titleContainer);
+    const content = document.createElement('p');
+    content.textContent = post.content;
+    article.appendChild(content);
 
-      let usernameContainer = document.createElement('h5');
-      usernameContainer.textContent = author;
-      figcap.appendChild(usernameContainer);
+    const editLink = document.createElement('a');
+    editLink.href = '/post/' + post.id + '/edit';
+    editLink.textContent = 'Edit';
+    editLink.classList.add('link_btn');
+    article.appendChild(editLink);
 
-      let timeContainer = document.createElement('h5');
-      timeContainer.textContent = timestamp;
-      figcap.appendChild(timeContainer);
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Delete';
+    delBtn.classList.add('link_btn');
+    delBtn.addEventListener('click', async () => {
+      const res = await fetch('/api/posts/' + post.id, { method: 'DELETE' });
+      if (res.ok) {
+        article.remove();
+      }
+    });
+    article.appendChild(delBtn);
 
-      let contentContainer = document.createElement('p');
-      contentContainer.id = 'content';
-      contentContainer.textContent = content;
-      figcap.appendChild(contentContainer);
-
-      let editBtn = document.createElement('button');
-      editBtn.classList.add('editBtn');
-      editBtn.textContent = 'Edit';
-      editBtn.addEventListener('click', editPost);
-      postContainer.appendChild(editBtn);
-
-      let delBtn = document.createElement('button');
-      delBtn.classList.add('delBtn');
-      delBtn.textContent = 'Delete';
-      delBtn.addEventListener('click', deletePost);
-      postContainer.appendChild(delBtn);
-
-      postList.insertBefore(postContainer, document.querySelectorAll('article')[0]);
-    }
+    postList.appendChild(article);
   }
 }
 
 loadPosts();
 
-// Function to remove a post from the page after clicking delete - this is also reflected on the server side
-function deletePost(e) {
-  // Put post in object to be the body of fetch request
-  const post = {
-    postId: document.getElementsByTagName('h6')[0].textContent,
-  };
-
-  const requestHeaders = {
-    'Content-Type': 'application/json',
-  };
-
-  // Delete post
-  fetch('/deletepost', {
-    method: 'POST',
-    headers: requestHeaders,
-    body: JSON.stringify(post),
-  });
-
-  // Hide element on button click so deletion appears immediate
-  e.target.parentNode.hidden = true;
-}
-
-// Function to edit post
-function editPost(e) {
-  // Get post that the user clicked on
-  let post = e.target.parentNode;
-
-  // Fill out form fields with data grabbed from post
-  document.getElementById('title_field').value = post.getElementsByTagName('h3')[0].textContent;
-  document.getElementById('content_field').value = post.getElementsByTagName('p')[0].textContent;
-  document.getElementById('postId').value = post.getElementsByTagName('h6')[0].textContent;
-
-  // Scroll user to post form
-  document.getElementById('postForm').scrollIntoView({ behavior: 'smooth' });
-}
-
-// Function to filter posts on page using search bar
 function searchPosts() {
-  let searchBar = document.getElementById('search');
+  // since we have all posts as articles in the myposts section of DOM, can loop over and simply hide posts that dont match title/content
+  const filter = document.getElementById('search').value.toLowerCase();
+  const posts = document.getElementById('myPosts').getElementsByTagName('article');
 
-  // Get contents of search bar
-  let filter = searchBar.value.toUpperCase();
+  for (let i = 0; i < posts.length; i++) {
+    const title = posts[i].getElementsByTagName('h3')[0];
+    const content = posts[i].getElementsByTagName('p')[1]; // second p is the real content, 1st is data+status
 
-  let postList = document.getElementById('myPosts');
-  let posts = postList.getElementsByTagName('article');
+    const titleText = title.textContent.toLowerCase();
+    const contentText = content ? content.textContent.toLowerCase() : '';
 
-  // Loop through all posts, and hide ones that don't match the search
-  for (i = 0; i < posts.length; i++) {
-    // Search body of post
-    let content = posts[i].getElementsByTagName('p')[0];
-    let postContent = content.textContent || content.innerText;
-
-    // Search title of post
-    let title = posts[i].getElementsByTagName('h3')[0];
-    let titleContent = title.textContent || title.innerText;
-
-    // Search username
-    let username = posts[i].getElementsByTagName('h5')[0];
-    let usernameContent = username.textContent || username.innerText;
-
-    // Change display property of posts depending on whether it matches the search or not
-    if (
-      postContent.toUpperCase().indexOf(filter) > -1 ||
-      titleContent.toUpperCase().indexOf(filter) > -1 ||
-      usernameContent.toUpperCase().indexOf(filter) > -1
-    ) {
-      posts[i].style.display = '';
+    if (titleText.includes(filter) || contentText.includes(filter)) {
+      posts[i].style.display = ''; // allow display
     } else {
+      // if not match then add display none to hide
       posts[i].style.display = 'none';
     }
   }
 }
 
-document.getElementById('search').addEventListener('keyup', searchPosts);
+document.getElementById('search').addEventListener('keyup', searchPosts); // after each key press, filter posts
