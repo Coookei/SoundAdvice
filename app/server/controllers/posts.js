@@ -49,7 +49,7 @@ export const updatePost = async (req, res) => {
   const isAuthor = req.userId === post.user_id;
   const isAdmin = await userQueries.isAdmin(req.userId);
 
-  if (!isAuthor && !isAdmin) return res.status(403).json({ error: 'Not authorised' }); // should this be 404 as well to hide existence?
+  if (!isAuthor && !isAdmin) return res.status(404).json({ error: 'Post not found' }); // hide post existence so instead of 403 forbidden, return 404
 
   if (!title || !content) {
     return res.status(400).json({ error: 'Title and content are required' });
@@ -71,7 +71,7 @@ export const deletePost = async (req, res) => {
   const isAuthor = req.userId === post.user_id;
   const isAdmin = await userQueries.isAdmin(req.userId);
 
-  if (!isAuthor && !isAdmin) return res.status(403).json({ error: 'Not authorised' }); // should this be 404 as well to hide existence?
+  if (!isAuthor && !isAdmin) return res.status(404).json({ error: 'Post not found' }); // hide post existence so instead of 403 forbidden, return 404
 
   await postQueries.remove(id);
   res.json({ message: 'Post deleted' });
