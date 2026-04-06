@@ -5,7 +5,7 @@ export const findAllApproved = async () => {
   return rows;
 };
 
-export const findById = async (id) => {
-  const { rows } = await pool.query('SELECT * FROM posts WHERE id = $1', [id]);
+export const findApprovedById = async (id) => {
+  const { rows } = await pool.query("SELECT * FROM posts WHERE id = $1 AND status = 'approved'", [id]);
   return rows[0];
 };

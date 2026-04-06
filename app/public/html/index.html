@@ -5,7 +5,6 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
     <link rel="stylesheet" href="/css/style.css" />
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
     <script src="/js/index.js" defer></script>
     <script src="/js/shared.js" defer></script>
@@ -14,12 +13,13 @@
     <header>
       <a href="/"><img id="logo" src="/images/logo.png" /></a>
       <h1>Sound Advice</h1>
-      <div class="dropdown">
-        <button id="login_link" href="#">Username <i class="fa fa-caret-down"></i></button>
+      <a id="login_btn" href="/sign-in" style="display: none">Log in</a>
+      <div class="dropdown" id="user_dropdown" style="display: none">
+        <button id="login_link">Username <i class="fa fa-caret-down"></i></button>
         <div class="dropdown-content">
           <a href="/profile">Profile</a>
-          <a href="/admin/approval">Admin Panel</a>
-          <a id="logout_btn" href="/sign-in">Log out</a>
+          <a href="/admin/approval" id="admin_panel_link" style="display: none">Admin Panel</a>
+          <a id="logout_btn">Log out</a>
         </div>
       </div>
     </header>

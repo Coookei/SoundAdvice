@@ -15,7 +15,7 @@
     <main>
       <p>Create an account to get started.</p>
 
-      <form method="post" action="/signup" id="signup_form">
+      <form id="signup_form">
         <label for="username_input">Username:</label>
         <input type="text" id="username_input" name="username_input" placeholder="Choose a username..." />
 
@@ -33,8 +33,8 @@
           placeholder="Confirm your password..."
         />
 
-        <label for="captcha_input">Captcha: 3 + 4 = ?</label>
-        <input type="text" id="captcha_input" name="captcha_input" placeholder="Enter answer..." />
+        <label for="captcha_input">Unscramble the word: <span id="captcha_word"></span></label>
+        <input type="text" id="captcha_input" name="captcha_input" placeholder="Type the unscrambled word..." />
 
         <button id="signup_btn" type="submit">Sign up</button>
       </form>

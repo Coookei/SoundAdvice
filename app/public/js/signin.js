@@ -1,50 +1,38 @@
-// Update error message based on login attempt
-async function checkLoginAttempts() {
-  const response = await fetch('../json/login_attempt.json');
-  const form_data = await response.json();
+const form = document.getElementById('login_form');
 
-  // Inform user they need to fill out the fields on the login form
-  if (form_data.username === 'null' || form_data.password === 'null') {
-    document.getElementById('login_error').parentNode.removeChild(document.getElementById('login_error'));
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const email = document.getElementById('email_input').value.trim();
+  const password = document.getElementById('password_input').value;
+
+  const existing = document.getElementById('login_error');
+  if (existing) existing.remove();
+
+  if (!email || !password) {
+    showError('Please fill out all fields.');
+    return;
   }
-  if (form_data.username === '' || form_data.password === '') {
-    if (document.getElementById('login_error') !== null) {
-      document.getElementById('login_error').parentNode.removeChild(document.getElementById('login_error'));
-    }
 
-    let error_msg = document.createElement('p');
-    error_msg.id = 'login_error';
-    error_msg.textContent = 'Please fill out the login fields.';
-    error_msg.classList.add('error');
-    document.querySelector('#login_btn').parentNode.insertBefore(error_msg, document.querySelector('#login_btn'));
-  } else if (form_data.username !== 'username') {
-    // Inform user they have entered the incorrect username
-    if (document.getElementById('login_error') !== null) {
-      document.getElementById('login_error').parentNode.removeChild(document.getElementById('login_error'));
-    }
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
 
-    let error_msg = document.createElement('p');
-    error_msg.id = 'login_error';
-    error_msg.textContent = 'Incorrect username.';
-    error_msg.classList.add('error');
-    document.querySelector('#login_btn').parentNode.insertBefore(error_msg, document.querySelector('#login_btn'));
-  } else if (form_data.password !== 'password') {
-    // Inform user they have entered the incorrect password
+  const data = await res.json();
 
-    if (document.getElementById('login_error') !== null) {
-      document.getElementById('login_error').parentNode.removeChild(document.getElementById('login_error'));
-    }
-
-    let error_msg = document.createElement('p');
-    error_msg.id = 'login_error';
-    error_msg.textContent = 'Incorrect password.';
-    error_msg.classList.add('error');
-    document.querySelector('#login_btn').parentNode.insertBefore(error_msg, document.querySelector('#login_btn'));
+  if (res.ok && data.redirect) {
+    window.location.href = data.redirect;
   } else {
-    if (document.getElementById('login_error') !== null) {
-      document.getElementById('login_error').parentNode.removeChild(document.getElementById('login_error'));
-    }
+    showError(data.error || 'Something went wrong');
   }
-}
+});
 
-checkLoginAttempts();
+function showError(msg) {
+  const p = document.createElement('p');
+  p.id = 'login_error';
+  p.textContent = msg;
+  p.classList.add('error');
+  form.insertBefore(p, form.firstChild);
+}
