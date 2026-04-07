@@ -53,6 +53,10 @@ export const updatePost = async (req, res) => {
 
   if (!isAuthor && !isAdmin) return res.status(404).json({ error: 'Post not found' }); // hide post existence so instead of 403 forbidden, return 404
 
+  if (post.status === 'rejected' && !isAdmin) {
+    return res.status(403).json({ error: 'Rejected posts cannot be edited' });
+  }
+
   if (!title || !content) {
     return res.status(400).json({ error: 'Title and content are required' });
   }
