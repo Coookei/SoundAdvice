@@ -1,4 +1,6 @@
-const postId = window.location.pathname.split('/').pop();
+// match a / that appears at end and remove it, then get last part of url as id
+// in regex: \ to escape the / and then $ means end of string, so replace / at end of string
+const postId = window.location.pathname.replace(/\/$/, '').split('/').pop();
 
 async function loadPost() {
   const res = await fetch('/api/posts/' + postId);
