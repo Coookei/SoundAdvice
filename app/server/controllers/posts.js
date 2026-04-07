@@ -1,5 +1,6 @@
 import * as postQueries from '../queries/posts.js';
 import * as userQueries from '../queries/users.js';
+import { logPostEvent } from '../log.js';
 
 export const getPosts = async (req, res) => {
   const posts = await postQueries.findAllApproved();
@@ -35,6 +36,7 @@ export const createPost = async (req, res) => {
 
   // create new post with authd users id, default status is pending
   const post = await postQueries.create(req.userId, title, content);
+  logPostEvent('post_created', { userId: req.userId, postId: post.id });
   res.status(201).json({ post });
 };
 
@@ -58,6 +60,11 @@ export const updatePost = async (req, res) => {
   // if an admin updates post, LEAVE state as it, i.e. if approved STAYS approved
   // whereas if user updates post goes back to pending status
   const updated = await postQueries.update(id, title, content, isAdmin ? post.status : 'pending');
+  logPostEvent('post_updated', {
+    userId: req.userId,
+    postId: post.id,
+    detail: isAdmin && !isAuthor ? 'admin edit' : 'author edit, status reset to pending',
+  });
   res.json({ post: updated });
 };
 
@@ -74,6 +81,11 @@ export const deletePost = async (req, res) => {
   if (!isAuthor && !isAdmin) return res.status(404).json({ error: 'Post not found' }); // hide post existence so instead of 403 forbidden, return 404
 
   await postQueries.remove(id);
+  logPostEvent('post_deleted', {
+    userId: req.userId,
+    postId: post.id,
+    detail: isAdmin && !isAuthor ? 'admin delete' : 'author delete',
+  });
   res.json({ message: 'Post deleted' });
 };
 
@@ -100,5 +112,6 @@ export const updatePostStatus = async (req, res) => {
 
   // admins can update post status to approved or rejected only
   const updated = await postQueries.updateStatus(id, status);
+  logPostEvent('post_status_changed', { userId: req.userId, postId: post.id, detail: status });
   res.json({ post: updated });
 };
