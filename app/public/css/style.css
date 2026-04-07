@@ -394,3 +394,7 @@ legend {
 #postForm button[type='submit']:hover {
   background-color: #f2875c;
 }
+
+.small-note {
+  font-size: 0.9rem;
+}
