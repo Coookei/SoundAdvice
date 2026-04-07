@@ -27,6 +27,9 @@ async function loadPost() {
 
   if (user && (user.id === post.user_id || user.is_admin)) {
     document.getElementById('postActions').style.display = '';
+    if (post.status === 'rejected' && !user.is_admin) {
+      document.getElementById('edit_btn').style.display = 'none';
+    }
   } else {
     document.getElementById('postActions').style.display = 'none';
   }

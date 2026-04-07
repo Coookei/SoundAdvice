@@ -32,11 +32,13 @@ async function loadPosts() {
     content.textContent = post.content;
     article.appendChild(content);
 
-    const editLink = document.createElement('a');
-    editLink.href = '/post/' + post.id + '/edit';
-    editLink.textContent = 'Edit';
-    editLink.classList.add('link_btn');
-    article.appendChild(editLink);
+    if (post.status !== 'rejected') {
+      const editLink = document.createElement('a');
+      editLink.href = '/post/' + post.id + '/edit';
+      editLink.textContent = 'Edit';
+      editLink.classList.add('link_btn');
+      article.appendChild(editLink);
+    }
 
     const delBtn = document.createElement('button');
     delBtn.textContent = 'Delete';
