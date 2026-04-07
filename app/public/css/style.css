@@ -65,6 +65,32 @@ header > h1 {
   background-color: #f2875c;
 }
 
+#filterButtons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filter_btn {
+  color: #c74402;
+  background-color: white;
+  padding: 7px;
+  min-width: 100px;
+  border-radius: 3px;
+  border: 2px solid #c74402;
+  cursor: pointer;
+  transition: background 300ms ease-in-out;
+}
+
+.filter_btn:hover {
+  background-color: #fde8de;
+}
+
+.filter_btn.active {
+  color: black;
+  background-color: #f56d36;
+}
+
 .error {
   color: red;
 }

@@ -1,5 +1,5 @@
 async function loadPosts() {
-  const response = await fetch('/api/posts/admin'); // admin endpoint will returl ALL posts no matter what status
+  const response = await fetch('/api/posts/admin'); // admin endpoint will return ALL posts no matter what status
   const { posts } = await response.json();
 
   const container = document.getElementById('pendingPosts');
@@ -9,6 +9,7 @@ async function loadPosts() {
 
     const article = document.createElement('article');
     article.classList.add('post');
+    article.dataset.status = post.status; // store the status on the element so filter can show/hide it
 
     const title = document.createElement('h3');
     const titleLink = document.createElement('a');
@@ -42,8 +43,13 @@ async function loadPosts() {
         });
         if (res.ok) {
           statusElement.textContent = 'Status: approved';
+          article.dataset.status = 'approved'; // update post status so filter will work
+
           approveButton.remove();
           rejectButton.remove();
+
+          // run filter again so posts gets in corect filter
+          applyFilter();
         }
       });
       article.appendChild(approveButton);
@@ -59,8 +65,13 @@ async function loadPosts() {
         });
         if (res.ok) {
           statusElement.textContent = 'Status: rejected';
+          article.dataset.status = 'rejected'; // update post status so filter will work
+
           approveButton.remove();
           rejectButton.remove();
+
+          // run filter again so posts gets in correct filter
+          applyFilter();
         }
       });
       article.appendChild(rejectButton);
@@ -68,6 +79,28 @@ async function loadPosts() {
 
     container.appendChild(article);
   }
+
+  applyFilter(); // on page load, show pending posts first
 }
+
+function applyFilter() {
+  const filter = document.querySelector('.filter_btn.active').dataset.filter; // read html to find active tab
+
+  const articles = document.querySelectorAll('#pendingPosts article');
+  articles.forEach((article) => {
+    // only show posts IF it has the data status that matches CURRENT FILTER otherwise its display: none
+    article.style.display = article.dataset.status === filter ? '' : 'none';
+  });
+}
+
+// listen for clicks on the three filter buttons
+document.getElementById('filterButtons').addEventListener('click', (e) => {
+  const btn = e.target.closest('.filter_btn'); // get clostest button that was clicked
+  if (!btn) return;
+
+  document.querySelectorAll('.filter_btn').forEach((b) => b.classList.remove('active')); // remove active class from all buttons
+  btn.classList.add('active');
+  applyFilter(); // run filtering!
+});
 
 loadPosts();

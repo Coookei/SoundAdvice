@@ -34,8 +34,14 @@
 
     <main>
       <section id="approvalList">
-        <h2>Posts Pending Approval</h2>
+        <h2>Post Approval</h2>
         <p>Review each post and choose to allow or deny it.</p>
+
+        <div id="filterButtons">
+          <button class="filter_btn active" data-filter="pending">Pending</button>
+          <button class="filter_btn" data-filter="approved">Approved</button>
+          <button class="filter_btn" data-filter="rejected">Rejected</button>
+        </div>
 
         <div id="pendingPosts"></div>
       </section>
