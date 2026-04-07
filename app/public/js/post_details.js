@@ -19,6 +19,12 @@ async function loadPost() {
   document.getElementById('postTitle').textContent = post.title;
   document.getElementById('postAuthor').textContent = post.username;
   document.getElementById('postContent').innerHTML = '<p>' + post.content + '</p>';
+
+  if (post.status === 'pending' || post.status === 'rejected') {
+    const statusElement = document.getElementById('postStatus');
+    statusElement.textContent = 'Status: ' + post.status;
+    statusElement.style.display = '';
+  }
   document.getElementById('edit_btn').href = '/post/' + post.id + '/edit';
 
   // check if the current user is the author or an admin so we can show edit/delte buttons
