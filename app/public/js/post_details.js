@@ -33,11 +33,27 @@ async function loadPost() {
 
   // attach listener to delete button
   document.getElementById('delete_btn').addEventListener('click', async () => {
+    // remove error message if already existing
+    const existing = document.getElementById('post_error');
+    if (existing) existing.remove();
+
     const deleteRes = await fetch('/api/posts/' + post.id, { method: 'DELETE' });
+    const data = await deleteRes.json();
+
     if (deleteRes.ok) {
       window.location.href = '/';
+    } else {
+      showError(data.error || 'Something went wrong');
     }
   });
 }
 
 loadPost();
+
+function showError(msg) {
+  const p = document.createElement('p');
+  p.id = 'post_error';
+  p.textContent = msg;
+  p.classList.add('error');
+  document.getElementById('postActions').insertBefore(p, document.getElementById('edit_btn'));
+}
