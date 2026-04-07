@@ -42,9 +42,17 @@ async function loadPosts() {
     delBtn.textContent = 'Delete';
     delBtn.classList.add('link_btn');
     delBtn.addEventListener('click', async () => {
+      // remove error message if already existing
+      const existing = document.getElementById('post_error');
+      if (existing) existing.remove();
+
       const res = await fetch('/api/posts/' + post.id, { method: 'DELETE' });
+      const data = await res.json();
+
       if (res.ok) {
         article.remove();
+      } else {
+        showError(data.error || 'Something went wrong');
       }
     });
     article.appendChild(delBtn);
@@ -54,6 +62,14 @@ async function loadPosts() {
 }
 
 loadPosts();
+
+function showError(msg) {
+  const p = document.createElement('p');
+  p.id = 'post_error';
+  p.textContent = msg;
+  p.classList.add('error');
+  document.getElementById('myPosts').insertBefore(p, document.getElementById('search_icon'));
+}
 
 function searchPosts() {
   // since we have all posts as articles in the myposts section of DOM, can loop over and simply hide posts that dont match title/content
