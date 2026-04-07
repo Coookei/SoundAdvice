@@ -11,7 +11,10 @@ async function loadPosts() {
     article.classList.add('post');
 
     const title = document.createElement('h3');
-    title.textContent = post.title;
+    const titleLink = document.createElement('a');
+    titleLink.textContent = post.title;
+    titleLink.href = '/post/' + post.id;
+    title.appendChild(titleLink);
     article.appendChild(title);
 
     const meta = document.createElement('p');
