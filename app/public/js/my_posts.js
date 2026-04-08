@@ -33,6 +33,7 @@ async function loadPosts() {
     article.appendChild(content);
 
     if (post.status !== 'rejected') {
+      // if users post is rejected, they can no longer edit it
       const editLink = document.createElement('a');
       editLink.href = '/post/' + post.id + '/edit';
       editLink.textContent = 'Edit';
@@ -73,17 +74,19 @@ function showError(msg) {
   document.getElementById('myPosts').insertBefore(p, document.getElementById('search_icon'));
 }
 
-function searchPosts() {
-  // since we have all posts as articles in the myposts section of DOM, can loop over and simply hide posts that dont match title/content
-  const filter = document.getElementById('search').value.toLowerCase();
+function filterPosts() {
+  const filter = document.getElementById('search').value.toLowerCase(); // get user input from the search bar
+
+  // extract all posts from DOM as they are each in their own article tag
   const posts = document.getElementById('myPosts').getElementsByTagName('article');
 
+  // can now loop over and simple hide posts that dont match title/content
   for (let i = 0; i < posts.length; i++) {
-    const title = posts[i].getElementsByTagName('h3')[0];
+    const title = posts[i].getElementsByTagName('h3')[0]; // title is always first h3 tag in the article
     const content = posts[i].getElementsByTagName('p')[1]; // second p is the real content, 1st is data+status
 
     const titleText = title.textContent.toLowerCase();
-    const contentText = content ? content.textContent.toLowerCase() : '';
+    const contentText = content.textContent.toLowerCase();
 
     if (titleText.includes(filter) || contentText.includes(filter)) {
       posts[i].style.display = ''; // allow display
@@ -94,4 +97,4 @@ function searchPosts() {
   }
 }
 
-document.getElementById('search').addEventListener('keyup', searchPosts); // after each key press, filter posts
+document.getElementById('search').addEventListener('keyup', filterPosts); // after each key press, filter posts
