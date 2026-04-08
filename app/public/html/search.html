@@ -6,7 +6,7 @@
     <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
     <link rel="stylesheet" href="/css/style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-    <script src="/js/index.js" defer></script>
+    <script src="/js/search.js" defer></script>
     <script src="/js/shared.js" defer></script>
   </head>
   <body>
@@ -26,23 +26,20 @@
 
     <nav>
       <ul>
-        <li class="active"><a href="/">Home</a></li>
+        <li><a href="/">Home</a></li>
         <li><a href="/post/new">New Post</a></li>
         <li><a href="/my-posts">My Posts</a></li>
       </ul>
     </nav>
 
     <main>
-      <section id="postsList">
-        <h2>Latest Posts</h2>
-
+      <section id="searchResults">
+        <h2 id="searchHeading"></h2>
         <form action="/search" method="GET">
           <i class="fa fa-search" aria-hidden="true"></i>
-          <input class="search_bar" id="search" name="q" type="text" placeholder="Search posts..." />
+          <input class="search_bar" name="q" type="text" placeholder="Search posts..." />
           <button type="submit">Search</button>
         </form>
-
-        <p><a class="link_btn" href="/post/new">New Post</a></p>
       </section>
     </main>
     <footer></footer>
