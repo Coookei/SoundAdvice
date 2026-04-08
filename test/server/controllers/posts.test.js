@@ -8,6 +8,7 @@ import {
   getMyPosts,
   getAdminPosts,
   updatePostStatus,
+  searchPosts,
 } from '../../../app/server/controllers/posts.js';
 import pool from '../../../app/server/db.js';
 
@@ -381,5 +382,43 @@ describe('Testing updatePostStatus', () => {
     await updatePostStatus(req, res);
 
     expect(res.body.post.status).to.equal('approved');
+  });
+});
+
+describe('Testing searchPosts', () => {
+  it('should return matching posts for a query', async () => {
+    pool.query = async () => ({
+      rows: [{ id: 1, title: 'Music tips', content: 'some music content', status: 'approved' }],
+    });
+
+    const req = { query: { q: 'music' } }; // pass in searh query like url as ?q=music
+    const res = {
+      json: (data) => {
+        res.body = data;
+      },
+    };
+
+    await searchPosts(req, res);
+
+    expect(res.body.posts).to.be.an('array');
+    expect(res.body.posts.length).to.equal(1);
+  });
+
+  it('should return 400 if query is missing', async () => {
+    const req = { query: {} }; // no query so the function should trigger first if statement, and return 400
+    const res = {
+      status: (code) => {
+        res.statusCode = code;
+        return res;
+      },
+      json: (data) => {
+        res.body = data;
+      },
+    };
+
+    await searchPosts(req, res);
+
+    expect(res.statusCode).to.equal(400);
+    expect(res.body.error).to.equal('Query is required');
   });
 });
