@@ -8,6 +8,7 @@ import {
   getPosts,
   updatePost,
   updatePostStatus,
+  searchPosts,
 } from '../controllers/posts.js';
 import { requireAdmin, requireAuth } from '../middleware/auth.api.js';
 import { rateLimit } from '../middleware/rate_limit.js';
@@ -15,6 +16,7 @@ import { rateLimit } from '../middleware/rate_limit.js';
 const router = Router();
 
 router.get('/', getPosts); // get all approved public posts
+router.get('/search', searchPosts); // search approved posts with a query
 router.get('/my', requireAuth, getMyPosts); // all posts of any status for current authd user
 // can create 10 posts every 10 mins to prevent spam
 router.post('/', requireAuth, rateLimit({ max: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }), createPost); // authd users can create posts
@@ -31,6 +33,6 @@ router.delete(
   deletePost
 ); // authd users can delete their own posts, admin can delete any post
 
-// /my and /admin routes need be before /:id to avoid conflicts
+// GET /my, /search and /admin routes need be before /:id to avoid conflicts
 
 export default router;

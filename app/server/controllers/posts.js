@@ -119,3 +119,18 @@ export const updatePostStatus = async (req, res) => {
   logPostEvent('post_status_changed', { userId: req.userId, postId: post.id, detail: status });
   res.json({ post: updated });
 };
+
+export const searchPosts = async (req, res) => {
+  // we encoded the query in URL on search page using encodeURIComponent(), but Express decodes params itself, so dont need to manually here
+  const { q } = req.query;
+
+  // if no query or query is empty after removing whitespace, 400
+  if (!q || !q.trim()) {
+    return res.status(400).json({ error: 'Query is required' });
+  }
+
+  const query = q.trim();
+
+  const posts = await postQueries.searchApproved(query);
+  res.json({ posts });
+};

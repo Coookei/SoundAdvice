@@ -59,3 +59,13 @@ export const updateStatus = async (id, status) => {
 export const remove = async (id) => {
   await pool.query('DELETE FROM posts WHERE id = $1', [id]);
 };
+
+export const searchApproved = async (query) => {
+  // for public search only want approved posts AND posts where the title or content contain the search query string
+  // ILIKE does caseinsensitive pattern match, and %{query}% means anywhere so 'hello' matches 'Hello', 'a Hello' and 'Hello a'
+  const { rows } = await pool.query(
+    "SELECT p.id, p.title, p.content, p.created_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.status = 'approved' AND (p.title ILIKE $1 OR p.content ILIKE $1) ORDER BY p.created_at DESC",
+    [`%${query}%`]
+  );
+  return rows;
+};
