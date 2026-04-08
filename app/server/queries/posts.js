@@ -1,15 +1,16 @@
 import pool from '../db.js';
 
 export const findAllApproved = async () => {
+  // in all queries explicitly select fields to return over *, to prevent leaking data
   const { rows } = await pool.query(
-    "SELECT p.*, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.status = 'approved' ORDER BY p.created_at DESC"
+    "SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.status = 'approved' ORDER BY p.created_at DESC"
   );
   return rows;
 };
 
 export const findById = async (id) => {
   const { rows } = await pool.query(
-    'SELECT p.*, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.id = $1',
+    'SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.id = $1',
     [id]
   );
   return rows[0];
@@ -17,7 +18,7 @@ export const findById = async (id) => {
 
 export const findByUserId = async (userId) => {
   const { rows } = await pool.query(
-    'SELECT p.*, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.user_id = $1 ORDER BY p.created_at DESC',
+    'SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.user_id = $1 ORDER BY p.created_at DESC',
     [userId]
   );
   return rows;
@@ -25,34 +26,33 @@ export const findByUserId = async (userId) => {
 
 export const findAll = async () => {
   const { rows } = await pool.query(
-    'SELECT p.*, u.username FROM posts p JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC'
+    'SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, u.username FROM posts p JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC'
   );
   return rows;
 };
 
 export const create = async (userId, title, content) => {
-  const { rows } = await pool.query('INSERT INTO posts (user_id, title, content) VALUES ($1, $2, $3) RETURNING *', [
-    userId,
-    title,
-    content,
-  ]);
+  const { rows } = await pool.query(
+    'INSERT INTO posts (user_id, title, content) VALUES ($1, $2, $3) RETURNING id, user_id, title, content, status, created_at, updated_at',
+    [userId, title, content]
+  );
   return rows[0];
 };
 
 export const update = async (id, title, content, status = 'pending') => {
   // default to when updating post should go back to pending
   const { rows } = await pool.query(
-    'UPDATE posts SET title = $1, content = $2, status = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
+    'UPDATE posts SET title = $1, content = $2, status = $3, updated_at = NOW() WHERE id = $4 RETURNING id, user_id, title, content, status, created_at, updated_at',
     [title, content, status, id]
   );
   return rows[0];
 };
 
 export const updateStatus = async (id, status) => {
-  const { rows } = await pool.query('UPDATE posts SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *', [
-    status,
-    id,
-  ]);
+  const { rows } = await pool.query(
+    'UPDATE posts SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, user_id, title, content, status, created_at, updated_at',
+    [status, id]
+  );
   return rows[0];
 };
 
