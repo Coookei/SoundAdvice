@@ -22,11 +22,12 @@ export async function logAuthEvent(event, { userId = null, ip = null, detail = n
   await writeLog(AUTH_LOG_PATH, entry);
 }
 
-export async function logPostEvent(event, { userId = null, postId = null, detail = null } = {}) {
+export async function logPostEvent(event, { userId = null, postId = null, commentId = null, detail = null } = {}) {
   const entry = {
     event,
     userId,
     postId,
+    commentId,
     detail,
     timestamp: new Date().toISOString(),
   };
