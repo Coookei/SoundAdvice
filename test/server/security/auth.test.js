@@ -57,10 +57,9 @@ describe('Session Security', function () {
     expect(src).to.include('regenerateSession');
   });
 
-  // BUG: session cookie should include Secure flag for production
   it('should set Secure flag on cookies in production', function () {
     const src = fs.readFileSync('app/server/middleware/session.js', 'utf-8');
-    expect(src).to.include('SameSite=Lax');
+    expect(src).to.include('Secure');
   });
 });
 
@@ -97,8 +96,7 @@ describe('Captcha Verification', function () {
     expect(verifyCaptcha('fake-token', 'music')).to.be.false;
   });
 
-  // BUG: captcha tokens should be single-use
-  it('should allow reuse of captcha tokens', async function () {
+  it('should not allow reuse of captcha tokens', async function () {
     const { generateCaptcha, verifyCaptcha } = await import('../../../app/server/captcha.js');
 
     const { token, scrambled } = generateCaptcha();
@@ -107,6 +105,6 @@ describe('Captcha Verification', function () {
     const answer = words.find((w) => w.split('').sort().join('') === sorted);
 
     expect(verifyCaptcha(token, answer)).to.be.true;
-    expect(verifyCaptcha(token, answer || 'music')).to.be.true; // expects reuse works — but it shouldn't
+    expect(verifyCaptcha(token, answer || 'music')).to.be.false;
   });
 });
