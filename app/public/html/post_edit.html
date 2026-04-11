@@ -27,7 +27,7 @@
     <nav>
       <ul>
         <li><a href="/">Home</a></li>
-        <li><a href="/post/new">New Post</a></li>
+        <li><a href="/search">Search Posts</a></li>
         <li><a href="/my-posts">My Posts</a></li>
       </ul>
     </nav>
@@ -36,7 +36,7 @@
       <section>
         <h2>Edit Post</h2>
 
-        <form action="/api/posts" method="post" id="editForm">
+        <form id="editForm">
           <fieldset>
             <legend>Edit your post</legend>
 
@@ -54,6 +54,10 @@
             ></textarea>
 
             <button type="submit" id="save_btn">Save Changes</button>
+            <p class="small-note">
+              To keep our community safe, all post changes will be reviewed by an admin. The post will not be publicly
+              visible until approved.
+            </p>
           </fieldset>
         </form>
 

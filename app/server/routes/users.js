@@ -4,9 +4,7 @@ import { requireAdmin } from '../middleware/auth.api.js';
 
 const router = Router();
 
-// currently these user endpoints arent used anywhere but keeping
-// for potential admin feature to view users.
-router.get('/', requireAdmin, getUsers);
-router.get('/:id', requireAdmin, getUserById);
+router.get('/', requireAdmin, getUsers); // returns all users, for admin dashboard
+router.get('/:id', requireAdmin, getUserById); // not currently used
 
 export default router;

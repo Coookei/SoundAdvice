@@ -1,18 +1,18 @@
 <!doctype html>
 <html>
   <head>
-    <title>Sound Advice</title>
+    <title>Sound Advice Admin</title>
     <meta charset="utf-8" />
     <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
     <link rel="stylesheet" href="/css/style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-    <script src="/js/profile.js" defer></script>
+    <script src="/js/admin_users.js" defer></script>
     <script src="/js/shared.js" defer></script>
   </head>
   <body>
     <header>
       <a href="/"><img id="logo" src="/images/logo.png" /></a>
-      <h1>Sound Advice</h1>
+      <h1>Admin Dashboard</h1>
       <a id="login_btn" href="/sign-in" style="display: none">Log in</a>
       <div class="dropdown" id="user_dropdown" style="display: none">
         <button id="login_link">Username <i class="fa fa-caret-down"></i></button>
@@ -27,15 +27,26 @@
     <nav>
       <ul>
         <li><a href="/">Home</a></li>
-        <li><a href="/search">Search Posts</a></li>
-        <li><a href="/my-posts">My Posts</a></li>
+        <li><a href="/admin/approval">Post Approval</a></li>
+        <li class="active"><a href="/admin/users">User Management</a></li>
       </ul>
     </nav>
 
     <main>
-      <section>
-        <h2>Profile</h2>
-        <p>profile page</p>
+      <section id="userList">
+        <h2>Users</h2>
+        <table id="usersTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Admin</th>
+              <th>Joined</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
+        </table>
       </section>
     </main>
     <footer></footer>

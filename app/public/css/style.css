@@ -65,6 +65,32 @@ header > h1 {
   background-color: #f2875c;
 }
 
+#filterButtons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filter_btn {
+  color: #c74402;
+  background-color: white;
+  padding: 7px;
+  min-width: 100px;
+  border-radius: 3px;
+  border: 2px solid #c74402;
+  cursor: pointer;
+  transition: background 300ms ease-in-out;
+}
+
+.filter_btn:hover {
+  background-color: #fde8de;
+}
+
+.filter_btn.active {
+  color: black;
+  background-color: #f56d36;
+}
+
 .error {
   color: red;
 }
@@ -367,4 +393,33 @@ legend {
 
 #postForm button[type='submit']:hover {
   background-color: #f2875c;
+}
+
+.small-note {
+  font-size: 0.9rem;
+}
+
+.comment {
+  background-color: white;
+  border: 2px solid #c74402;
+  border-radius: 10px;
+  padding: 10px 15px;
+  margin: 8px 10px;
+  text-align: left;
+}
+
+.comment-delete-btn {
+  min-width: 70px;
+  font-size: 14px;
+}
+
+#commentForm textarea {
+  resize: none;
+  width: 90%;
+  height: 60px;
+  font-size: 16px;
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 8px;
+  border: 2px solid #c74402;
+  border-radius: 5px;
 }

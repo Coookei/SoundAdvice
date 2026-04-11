@@ -18,6 +18,10 @@ export const deleteSessionBySid = async (sid) => {
   await pool.query('DELETE FROM sessions WHERE sid = $1', [sid]);
 };
 
+export const deletePendingSessionsByUserId = async (userId) => {
+  await pool.query('DELETE FROM sessions WHERE user_id = $1 AND pending = true', [userId]);
+};
+
 export const increment2faAttempts = async (userId) => {
   const { rows } = await pool.query(
     'UPDATE sessions SET two_factor_attempts = two_factor_attempts + 1 WHERE user_id = $1 AND pending = true RETURNING two_factor_attempts',

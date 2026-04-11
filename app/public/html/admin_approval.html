@@ -12,7 +12,7 @@
   <body>
     <header>
       <a href="/"><img id="logo" src="/images/logo.png" /></a>
-      <h1>Sound Advice</h1>
+      <h1>Admin Dashboard</h1>
       <a id="login_btn" href="/sign-in" style="display: none">Log in</a>
       <div class="dropdown" id="user_dropdown" style="display: none">
         <button id="login_link">Username <i class="fa fa-caret-down"></i></button>
@@ -27,15 +27,21 @@
     <nav>
       <ul>
         <li><a href="/">Home</a></li>
-        <li><a href="/post/new">New Post</a></li>
-        <li><a href="/my-posts">My Posts</a></li>
+        <li class="active"><a href="/admin/approval">Post Approval</a></li>
+        <li><a href="/admin/users">User Management</a></li>
       </ul>
     </nav>
 
     <main>
       <section id="approvalList">
-        <h2>Posts Pending Approval</h2>
+        <h2>Post Approval</h2>
         <p>Review each post and choose to allow or deny it.</p>
+
+        <div id="filterButtons">
+          <button class="filter_btn active" data-filter="pending">Pending</button>
+          <button class="filter_btn" data-filter="approved">Approved</button>
+          <button class="filter_btn" data-filter="rejected">Rejected</button>
+        </div>
 
         <div id="pendingPosts"></div>
       </section>

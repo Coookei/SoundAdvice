@@ -27,7 +27,7 @@
     <nav>
       <ul>
         <li class="active"><a href="/">Home</a></li>
-        <li><a href="/post/new">New Post</a></li>
+        <li><a href="/search">Search Posts</a></li>
         <li><a href="/my-posts">My Posts</a></li>
       </ul>
     </nav>
@@ -36,8 +36,11 @@
       <section id="postsList">
         <h2>Latest Posts</h2>
 
-        <i class="fa fa-search" aria-hidden="true"></i>
-        <input class="search_bar" id="search" name="search" type="text" placeholder="Search posts..." />
+        <form action="/search" method="GET">
+          <i class="fa fa-search" aria-hidden="true"></i>
+          <input class="search_bar" id="search" name="q" type="text" placeholder="Search posts..." />
+          <button type="submit">Search</button>
+        </form>
 
         <p><a class="link_btn" href="/post/new">New Post</a></p>
       </section>

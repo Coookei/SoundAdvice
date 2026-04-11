@@ -27,8 +27,8 @@
     <nav>
       <ul>
         <li><a href="/">Home</a></li>
-        <li><a href="/post/new">New Post</a></li>
-        <li><a href="/my-posts">My Posts</a></li>
+        <li><a href="/search">Search Posts</a></li>
+        <li class="active"><a href="/my-posts">My Posts</a></li>
       </ul>
     </nav>
 
@@ -38,8 +38,14 @@
         <p>See all the posts you've made so far.</p>
         <p><a class="link_btn" href="/post/new">New Post</a></p>
 
-        <i class="fa fa-search" aria-hidden="true"></i>
-        <input class="search_bar" id="search" name="search" type="text" placeholder="Search your posts..." />
+        <i id="search_icon" class="fa fa-search" aria-hidden="true"></i>
+        <input
+          class="search_bar"
+          id="search"
+          name="search"
+          type="text"
+          placeholder="Filter your posts by title or content..."
+        />
       </section>
     </main>
   </body>

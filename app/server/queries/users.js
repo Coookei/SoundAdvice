@@ -1,7 +1,9 @@
 import pool from '../db.js';
 
 export const findAll = async () => {
-  const { rows } = await pool.query('SELECT id, username, email, is_admin, created_at FROM users');
+  const { rows } = await pool.query(
+    'SELECT id, username, email, is_admin, created_at FROM users ORDER BY is_admin DESC, created_at ASC'
+  );
   return rows;
 };
 
