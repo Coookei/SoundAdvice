@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "nodemon app/server/index.js",
     "start": "node app/server/index.js",
-    "test": "mocha --recursive",
+    "test": "mocha --recursive --require dotenv/config",
     "format": "prettier --write ."
   },
   "author": "UG17",
