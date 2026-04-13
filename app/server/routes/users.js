@@ -15,6 +15,8 @@ import { requireAdmin, requireAuth } from '../middleware/auth.api.js';
 
 import uploadRouter from '../middleware/upload.js'; 
 
+import { parseUpload } from '../middleware/upload.js'; 
+
 const router = Router();
 
 // update profile picture - requires authentication + file upload 
@@ -34,5 +36,11 @@ router.post('/bio', requireAuth, updateBio);
 
 // update password requires authentication 
 router.post('/password', requireAuth, updatePassword);
+
+router.post(
+    '/upload-pfp',
+    parseUpload,
+    updateProfilePicture
+); 
 
 export default router;
