@@ -95,7 +95,7 @@ document.getElementById('upload_pfp_btn').addEventListener('click', async () => 
     // ensure file selected 
     if (!file) return alert ('Select an image');
 
-    // prepare form data for upload 
+    // prepare form data for upload
     const formData = new FormData();
     formData.append('pfp', file);
 
