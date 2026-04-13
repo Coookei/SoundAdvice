@@ -100,7 +100,7 @@ document.getElementById('upload_pfp_btn').addEventListener('click', async () => 
     formData.append('pfp', file);
 
     // send file to backend endpoint
-    const res = await fetch('/api/users/pfp', {
+    const res = await fetch('/api/users/pfp/upload-pfp', {
         method: 'POST',
         body: formData
     });

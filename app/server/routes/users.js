@@ -13,10 +13,12 @@ import {
 // middleware for authentcation + authorization 
 import { requireAdmin, requireAuth } from '../middleware/auth.api.js';
 
-// middleware for file uploads 
-import upload from '../middleware/upload.js'; 
+import uploadRouter from '../middleware/upload.js'; 
 
 const router = Router();
+
+// update profile picture - requires authentication + file upload 
+router.use('/pfp', requireAuth, uploadRouter); 
 
 // get current user 
 router.get('/me', requireAuth, getMe); 
@@ -32,13 +34,5 @@ router.post('/bio', requireAuth, updateBio);
 
 // update password requires authentication 
 router.post('/password', requireAuth, updatePassword);
-
-// update profile picture - requires authentication + file upload 
-router.post(
-    '/pfp',
-    requireAuth,
-    upload.single('pfp'),
-    updateProfilePicture
-); 
 
 export default router;

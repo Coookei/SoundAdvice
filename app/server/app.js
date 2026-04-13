@@ -25,5 +25,6 @@ app.use('/', indexRouter);
 app.use((_req, res) => res.status(404).send('404 - Page not found'));
 
 // pfp upload
-app.use('/uploads', express.static(path.resolve('uploads'))); 
+app.use('/uploads', express.static('uploads')); 
+
 export default app;
