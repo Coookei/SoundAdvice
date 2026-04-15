@@ -42,9 +42,12 @@ export function verifyCaptcha(token, guess) {
 }
 
 // cleanup expired entries every 10 mins
-setInterval(() => {
-  const now = Date.now();
-  for (const [token, entry] of pending) {
-    if (now > entry.expiresAt) pending.delete(token);
-  }
-}, 10 * 60 * 1000);
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [token, entry] of pending) {
+      if (now > entry.expiresAt) pending.delete(token);
+    }
+  },
+  10 * 60 * 1000
+).unref(); // .unref() means timer wont keep the node process alive on shutdown. this stop test runs hanging indefinitely
