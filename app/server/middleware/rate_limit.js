@@ -13,7 +13,7 @@ export function rateLimit({ max = 5, windowMs = 10 * 60 * 1000, blockMs = 15 * 6
       }
     },
     10 * 60 * 1000
-  );
+  ).unref(); // .unref() means timer wont keep the node process alive on shutdown. this stop test runs hanging indefinitely
 
   return (req, res, next) => {
     const ip = req.ip;
