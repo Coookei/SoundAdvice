@@ -5,7 +5,8 @@ import crypto from 'crypto';
 // if someone gets access to the DB they just see random hex, not actual emails
 
 const ENCRYPTION_KEY = Buffer.from(process.env.ENCRYPTION_KEY || '', 'hex');
-if (ENCRYPTION_KEY.length !== 32) {
+if (ENCRYPTION_KEY.length !== 32 && process.env.NODE_ENV !== 'test') {
+  // tests just care this module loads, but dont need encryption key as are unit tests so not using database queries
   throw new Error('ENCRYPTION_KEY must be 32 bytes (64 hex chars) in .env');
 }
 
