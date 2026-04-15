@@ -5,7 +5,8 @@ export const findAll = async () => {
   const { rows } = await pool.query(
     'SELECT id, username, email_encrypted, is_admin, created_at FROM users ORDER BY is_admin DESC, created_at ASC'
   );
-  return rows.map((r) => ({ ...r, email: decrypt(r.email_encrypted), email_encrypted: undefined }));
+  // pull email_encrypted, and remaining fields into rest, then return all rest properties + email
+  return rows.map(({ email_encrypted, ...rest }) => ({ ...rest, email: decrypt(email_encrypted) }));
 };
 
 export const findById = async (id) => {
@@ -14,7 +15,10 @@ export const findById = async (id) => {
     [id]
   );
   if (!rows[0]) return undefined;
-  return { ...rows[0], email: decrypt(rows[0].email_encrypted), email_encrypted: undefined };
+  // destructure to get email_encrypted and the remaing properties
+  const { email_encrypted, ...rest } = rows[0];
+  // rebuild object but without email_encrypted property
+  return { ...rest, email: decrypt(email_encrypted) };
 };
 
 export const isAdmin = async (userId) => {
