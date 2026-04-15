@@ -74,10 +74,21 @@ describe('Rate Limiting', function () {
     let lastStatus = 200;
 
     for (let i = 0; i < 5; i++) {
-      const res = { statusCode: 200, status(c) { this.statusCode = c; return this; }, json() {}, setHeader() {} };
+      const res = {
+        statusCode: 200,
+        status(c) {
+          this.statusCode = c;
+          return this;
+        },
+        json() {},
+        setHeader() {},
+      };
       await new Promise((resolve) => {
         limiter(req, res, () => resolve());
-        if (res.statusCode === 429) { lastStatus = 429; resolve(); }
+        if (res.statusCode === 429) {
+          lastStatus = 429;
+          resolve();
+        }
       });
     }
 
@@ -100,7 +111,7 @@ describe('Captcha Verification', function () {
     const { generateCaptcha, verifyCaptcha } = await import('../../../app/server/captcha.js');
 
     const { token, scrambled } = generateCaptcha();
-    const words = ['music', 'sound', 'piano', 'drums', 'beats'];
+    const words = ['music', 'sound', 'piano', 'drums', 'notes'];
     const sorted = scrambled.split('').sort().join('');
     const answer = words.find((w) => w.split('').sort().join('') === sorted);
 
