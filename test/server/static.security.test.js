@@ -1,7 +1,9 @@
+// some static source checks that read source files and search for
+// expected strings rather than testing behaviour.
+// behaviour tests are in the unit test files
+
 import { expect } from 'chai';
 import fs from 'fs';
-
-// ---- ACCOUNT ENUMERATION ----
 
 describe('Account Enumeration Prevention', function () {
   it('should not reveal whether an email exists on failed login', function () {
@@ -19,13 +21,11 @@ describe('Account Enumeration Prevention', function () {
   it('should return same response for new and duplicate registration', function () {
     const src = fs.readFileSync('app/server/controllers/auth.js', 'utf-8');
 
-    // "Registration successful" should appear twice — once for real, once for duplicate
+    // "Registration successful" should appear twice - once for real, once for duplicate
     const matches = (src.match(/Registration successful/g) || []).length;
     expect(matches).to.equal(2);
   });
 });
-
-// ---- SQL INJECTION ----
 
 describe('SQL Injection Prevention', function () {
   it('should use parameterized queries in all query files', function () {
@@ -42,8 +42,6 @@ describe('SQL Injection Prevention', function () {
   });
 });
 
-// ---- SESSION SECURITY ----
-
 describe('Session Security', function () {
   it('should set HttpOnly and SameSite flags on cookies', function () {
     const src = fs.readFileSync('app/server/middleware/session.js', 'utf-8');
@@ -59,63 +57,7 @@ describe('Session Security', function () {
 
   it('should set Secure flag on cookies in production', function () {
     const src = fs.readFileSync('app/server/middleware/session.js', 'utf-8');
+
     expect(src).to.include('Secure');
-  });
-});
-
-// ---- RATE LIMITING ----
-
-describe('Rate Limiting', function () {
-  it('should block requests after exceeding the limit', async function () {
-    const { rateLimit } = await import('../../../app/server/middleware/rate_limit.js');
-
-    const limiter = rateLimit({ max: 3, windowMs: 60000, blockMs: 60000 });
-    const req = { ip: '10.0.0.50' };
-    let lastStatus = 200;
-
-    for (let i = 0; i < 5; i++) {
-      const res = {
-        statusCode: 200,
-        status(c) {
-          this.statusCode = c;
-          return this;
-        },
-        json() {},
-        setHeader() {},
-      };
-      await new Promise((resolve) => {
-        limiter(req, res, () => resolve());
-        if (res.statusCode === 429) {
-          lastStatus = 429;
-          resolve();
-        }
-      });
-    }
-
-    expect(lastStatus).to.equal(429);
-  });
-});
-
-// ---- CAPTCHA ----
-
-describe('Captcha Verification', function () {
-  it('should reject wrong answers and invalid tokens', async function () {
-    const { generateCaptcha, verifyCaptcha } = await import('../../../app/server/captcha.js');
-
-    const { token } = generateCaptcha();
-    expect(verifyCaptcha(token, 'wrongword')).to.be.false;
-    expect(verifyCaptcha('fake-token', 'music')).to.be.false;
-  });
-
-  it('should not allow reuse of captcha tokens', async function () {
-    const { generateCaptcha, verifyCaptcha } = await import('../../../app/server/captcha.js');
-
-    const { token, scrambled } = generateCaptcha();
-    const words = ['music', 'sound', 'piano', 'drums', 'notes'];
-    const sorted = scrambled.split('').sort().join('');
-    const answer = words.find((w) => w.split('').sort().join('') === sorted);
-
-    expect(verifyCaptcha(token, answer)).to.be.true;
-    expect(verifyCaptcha(token, answer || 'music')).to.be.false;
   });
 });
