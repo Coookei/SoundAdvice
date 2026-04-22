@@ -129,23 +129,43 @@ document.getElementById('save_bio_btn').addEventListener('click', async () => {
     else alert('Failed to update bio');
 });
 
-// update password
-document.getElementById('update_password_btn').addEventListener('click', async () => {
-
-    // get user input values 
+// password change - step 1: send email code
+document.getElementById('request_password_btn').addEventListener('click', async () => {
     const currentPassword = document.getElementById('current_password').value;
-    const newPassword = document.getElementById('new_password').value; 
+    const newPassword = document.getElementById('new_password').value;
 
-    // send password update request - user needs current + new password 
-    const res = await fetch('/api/users/password', {
+    const res = await fetch('/api/users/password/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword, newPassword })
     });
 
-    // notification of result 
-    if (res.ok){
-        alert('Password updated'); 
+    const data = await res.json();
+
+    if (res.ok) {
+        alert('Code sent to your email.');
+        document.getElementById('password_code_row').style.display = 'flex';
+    } else {
+        alert(data.error || 'Failed to send code');
     }
-    else alert('Failed to update password');
+});
+
+// password change - step 2: confirm with code
+document.getElementById('confirm_password_btn').addEventListener('click', async () => {
+    const code = document.getElementById('password_code').value;
+
+    const res = await fetch('/api/users/password/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+        alert('Password updated. Other devices have been logged out.');
+        location.reload();
+    } else {
+        alert(data.error || 'Failed to update password');
+    }
 });

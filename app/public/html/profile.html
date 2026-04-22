@@ -67,7 +67,11 @@
         </div>
         <div class="edit-row">
           <input type="password" id="new_password" placeholder="New Password" />
-          <button id="update_password_btn">Update Password</button>
+          <button id="request_password_btn">Send Code</button>
+        </div>
+        <div class="edit-row" id="password_code_row" style="display: none">
+          <input type="text" id="password_code" placeholder="Enter code from email" maxlength="6" />
+          <button id="confirm_password_btn">Update Password</button>
         </div>
       </section>
 

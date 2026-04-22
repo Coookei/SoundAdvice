@@ -1,9 +1,27 @@
-import * as userQueries from '../queries/users.js';
-import pool from '../db.js'; 
-import fs from 'fs';
-import path from 'path'; 
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
+import fs from 'fs';
+import path from 'path';
+import pool from '../db.js';
+import { decrypt, hashCode } from '../crypto.js';
+import { sendEmail } from '../email.js';
 import { parseUpload } from '../middleware/upload.js';
+import * as authQueries from '../queries/auth.js';
+import * as sessionQueries from '../queries/sessions.js';
+import * as userQueries from '../queries/users.js';
+
+// hold the new password hash in memory until the email code is verified - avoids adding a DB column for a short-lived value
+const pendingChanges = new Map();
+
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [userId, entry] of pendingChanges) {
+      if (now > entry.expiresAt) pendingChanges.delete(userId);
+    }
+  },
+  10 * 60 * 1000
+).unref();
 
 // gets all users 
 export const getUsers = async (req, res) => {
@@ -56,44 +74,68 @@ export const updateBio = async (req, res) => {
   res.json({ success: true }); 
 }; 
 
-// update password
-export const updatePassword = async (req, res) => {
+// step 1 of password change: verify current password, email a code, stash new hash
+export const requestPasswordChange = async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
-  // gets stored password for current user 
-  // user Id used to ensure access to only current users data
-  // prevents sql injection - actual values passed separately in the array, not the query 
-  // actual values not visible in database 
-  const userResult = await pool.query(
-    'SELECT password FROM users WHERE id = $1',
-    [req.userId]
-  ); 
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Current and new password are required' });
+  }
 
-  const user = userResult.rows[0];
-
-  // verifies current password 
-  const valid = await bcrypt.compare(
-    // current password peppered using bcrypt 
-    currentPassword + process.env.PEPPER, user.password);
-
+  const { rows } = await pool.query('SELECT password, email_encrypted FROM users WHERE id = $1', [req.userId]);
+  const user = rows[0];
+  const valid = await bcrypt.compare(currentPassword + process.env.PEPPER, user.password);
   if (!valid) {
     return res.status(400).json({ error: 'Incorrect current password' });
   }
 
-  // hash new password - pepper it again using bcrypt
-  // uses 12 rounds of hashing - salting added automatically 
-  const hashed = await bcrypt.hash(newPassword + process.env.PEPPER, 12);
+  // hash the new password now so plaintext isn't held in memory while waiting for the code
+  const newHash = await bcrypt.hash(newPassword + process.env.PEPPER, 12);
 
-  // updates password in database for current user only
-  // parameterised query - prevents sql injection - actual values passed separately in the array, not the query 
-  // uses array, hashed = $1, userId = $2 
-  await pool.query(
-    'UPDATE users SET password = $1 where id = $2',
-    [hashed, req.userId]
-  );
+  const code = crypto.randomInt(100000, 999999).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  await authQueries.setEmailCode(req.userId, hashCode(code), expiresAt);
 
-  res.json({ success: true });
-}; 
+  pendingChanges.set(req.userId, { newHash, expiresAt: Date.now() + 10 * 60 * 1000 });
+
+  const email = decrypt(user.email_encrypted);
+  await sendEmail(email, 'SoundAdvice password change code', `Your code is: ${code}. It expires in 10 minutes.`);
+
+  res.json({ message: 'Code sent' });
+};
+
+// step 2: verify code, apply new password, invalidate every other session for this user
+export const confirmPasswordChange = async (req, res) => {
+  const { code } = req.body;
+
+  if (!code) {
+    return res.status(400).json({ error: 'Code is required' });
+  }
+
+  const pending = pendingChanges.get(req.userId);
+  const stored = await authQueries.getEmailCode(req.userId);
+
+  if (!pending || !stored?.email_code || new Date() > new Date(stored.email_code_expires)) {
+    pendingChanges.delete(req.userId);
+    await authQueries.clearEmailCode(req.userId);
+    return res.status(400).json({ error: 'Code expired, please try again' });
+  }
+
+  const submitted = Buffer.from(hashCode(code.toString()), 'hex');
+  const storedBuf = Buffer.from(stored.email_code, 'hex');
+  if (submitted.length !== storedBuf.length || !crypto.timingSafeEqual(submitted, storedBuf)) {
+    return res.status(400).json({ error: 'Invalid code' });
+  }
+
+  await pool.query('UPDATE users SET password = $1 WHERE id = $2', [pending.newHash, req.userId]);
+  await authQueries.clearEmailCode(req.userId);
+  pendingChanges.delete(req.userId);
+
+  // if an attacker had a stolen cookie, they're now logged out; keep current session alive
+  await sessionQueries.deleteOtherSessionsByUserId(req.userId, req.sid);
+
+  res.json({ message: 'Password updated' });
+};
 
 // update profile picture - stores file on disk, path in DB
 // rate limiting handled by route middleware

@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { generateCaptcha, verifyCaptcha } from '../captcha.js';
+import { hashCode } from '../crypto.js';
 import { sendEmail } from '../email.js';
 import { logAuthEvent } from '../log.js';
 import { createSession, destroySession, regenerateSession } from '../middleware/session.js';
@@ -71,7 +72,7 @@ export const login = async (req, res) => {
   if (user.is_admin) {
     const code = crypto.randomInt(100000, 999999).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-    const codeHash = hmacHash(code); // hash with HMAC and 2FA secret stored in .env. attacker unable to get 2fa code even if db compromised
+    const codeHash = hashCode(code); // hash with HMAC and 2FA secret stored in .env. attacker unable to get 2fa code even if db compromised
 
     await authQueries.setEmailCode(user.id, codeHash, expiresAt);
     await sendEmail(email, 'Your SoundAdvice login code', `Your code is: ${code}. It expires in 10 minutes.`);
@@ -113,7 +114,7 @@ export const verify2fa = async (req, res) => {
   }
 
   // timing safe comparison of HMAC hashes
-  const submittedHash = hmacHash(code.toString());
+  const submittedHash = hashCode(code.toString());
   const submittedBuffer = Buffer.from(submittedHash, 'hex');
   const storedBuffer = Buffer.from(user.email_code, 'hex');
   const match = crypto.timingSafeEqual(submittedBuffer, storedBuffer);
@@ -155,7 +156,3 @@ export const me = async (req, res) => {
   const user = await userQueries.findById(req.userId);
   res.json({ user: user || null });
 };
-
-function hmacHash(value) {
-  return crypto.createHmac('sha256', process.env['2FA_SECRET']).update(value).digest('hex');
-}
