@@ -442,3 +442,35 @@ legend {
   border: 2px solid #c74402;
   border-radius: 5px;
 }
+
+/* profile page layout: titles centred, everything else left-aligned */
+.profile-header,
+.profile-edit,
+.profile-posts {
+  text-align: left;
+  padding: 20px;
+}
+
+.profile-header h2,
+.profile-edit h3,
+.profile-posts h3 {
+  text-align: center;
+}
+
+.profile-edit .edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.profile-edit .edit-row textarea,
+.profile-edit .edit-row input {
+  flex: 1;
+}
+
+.profile-edit button {
+  width: auto;
+  padding: 8px 14px;
+  white-space: nowrap;
+}

@@ -36,15 +36,16 @@
       <section class="profile-header">
         <div class="profile-banner"> </div>
 
+        <h2 id="profile_username"> Username </h2>
+
         <img id="profile_picture" class="profile-pic" alt = "Profile picture" />
 
-        <div class="pfp-controls"> 
+        <div class="pfp-controls">
           <input type="file" id="pfp_input" accept="image/*" />
           <button id="upload_pfp_btn"> Update Profile Picture </button>
         </div>
 
         <div class="profile-info">
-          <h2 id="profile_username"> Username </h2>
           <p id="profile_email"> </p>
           <p id="profile_joined"> </p>
           <p id="profile_bio"> </p>
@@ -55,13 +56,19 @@
         <h3> Edit Profile</h3>
 
         <!-- BIO -->
-         <textarea id="bio_input" placeholder="Update your bio"> </textarea>
-         <button id="save_bio_btn"> Save Bio </button>
+        <div class="edit-row">
+          <textarea id="bio_input" placeholder="Update your bio"></textarea>
+          <button id="save_bio_btn">Save Bio</button>
+        </div>
 
         <!-- Password -->
-         <input type="password" id="current_password" placeholder="Current Password">
-         <input type="password" id="new_password" placeholder="New Password">
-          <button id="update_password_btn"> Update Password </button>
+        <div class="edit-row">
+          <input type="password" id="current_password" placeholder="Current Password" />
+        </div>
+        <div class="edit-row">
+          <input type="password" id="new_password" placeholder="New Password" />
+          <button id="update_password_btn">Update Password</button>
+        </div>
       </section>
 
       <section class="profile-posts">
