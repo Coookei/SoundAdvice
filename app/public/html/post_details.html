@@ -27,19 +27,20 @@
     <nav>
       <ul>
         <li><a href="/">Home</a></li>
-        <li><a href="/post/new">New Post</a></li>
+        <li><a href="/search">Search Posts</a></li>
         <li><a href="/my-posts">My Posts</a></li>
       </ul>
     </nav>
 
     <main>
       <section id="postView">
-        <div id="postActions">
+        <div id="postActions" style="display: none">
           <a id="edit_btn" class="link_btn" href="#">Edit</a>
           <button id="delete_btn" class="link_btn">Delete</button>
         </div>
 
         <h2 id="postTitle">Post Title</h2>
+        <p id="postStatus" style="display: none"></p>
         <p id="postMeta">Posted by <span id="postAuthor">username</span></p>
         <div id="postContent">
           <p>Post content goes here.</p>
@@ -50,9 +51,13 @@
         <h3>Comments</h3>
         <div id="commentsList"></div>
 
-        <form id="commentForm" action="/comment" method="post">
+        <p id="loginToComment" style="display: none">
+          <a href="/sign-in">Log in</a> to leave a comment.
+        </p>
+
+        <form id="commentForm" style="display: none">
           <label for="comment_field">Leave a comment:</label>
-          <textarea id="comment_field" name="comment_field" placeholder="Write your comment..."></textarea>
+          <textarea id="comment_field" name="comment_field" placeholder="Write your comment..." maxlength="2000"></textarea>
           <button type="submit">Submit</button>
         </form>
       </section>

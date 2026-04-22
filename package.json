@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "nodemon app/server/index.js",
     "start": "node app/server/index.js",
-    "test": "mocha --recursive",
+    "test": "NODE_ENV=test mocha --recursive",
     "format": "prettier --write ."
   },
   "author": "UG17",

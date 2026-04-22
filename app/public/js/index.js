@@ -1,14 +1,12 @@
 // load latest posts 
 async function loadLatestPosts() {
-  // fetches data from posts.json 
-  const response = await fetch('/json/posts.json');
-  const posts = await response.json();
+  const response = await fetch('/api/posts');
+  const { posts } = await response.json();
 
   const postList = document.getElementById('postsList');
   const newPostBtn = postList.querySelector('.link_btn').parentElement;
 
-  // loop through posts in reverse order - newest posts appear first 
-  for (let i = posts.length - 1; i >= 0; i--) {
+  for (let i = 0; i < posts.length; i++) {
     const post = posts[i];
 
     // container element for each post 
@@ -17,7 +15,7 @@ async function loadLatestPosts() {
 
     // clickable link that navigates to full post page 
     const link = document.createElement('a');
-    link.href = '/post/' + post.postId;
+    link.href = '/post/' + post.id;
 
     // post title displayed as heading 
     const title = document.createElement('h3');
@@ -25,7 +23,7 @@ async function loadLatestPosts() {
 
     // metadata showing author + timestamp 
     const meta = document.createElement('p');
-    meta.textContent = 'By ' + post.username + ' - ' + post.timestamp;
+    meta.textContent = 'By ' + post.username + ' - ' + new Date(post.created_at).toLocaleDateString();
 
     // post content 
     const content = document.createElement('p');

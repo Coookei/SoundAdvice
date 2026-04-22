@@ -4,3 +4,4 @@ node_modules
 *.pdf
 !README.md
 logs/*.jsonl
+.vscode

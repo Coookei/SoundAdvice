@@ -6,7 +6,7 @@
     <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
     <link rel="stylesheet" href="/css/style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-    <script src="/js/post_new.js" defer></script>
+    <script src="/js/search.js" defer></script>
     <script src="/js/shared.js" defer></script>
   </head>
   <body>
@@ -27,38 +27,19 @@
     <nav>
       <ul>
         <li><a href="/">Home</a></li>
-        <li><a href="/search">Search Posts</a></li>
+        <li class="active"><a href="/search">Search Posts</a></li>
         <li><a href="/my-posts">My Posts</a></li>
       </ul>
     </nav>
 
     <main>
-      <section>
-        <h2>New Post</h2>
-
-        <form id="postForm">
-          <fieldset>
-            <legend>Write your post</legend>
-
-            <label for="title_field">Title:</label>
-            <input id="title_field" name="title_field" type="text" placeholder="Post title..." required />
-
-            <label for="content_field">Content:</label>
-            <textarea
-              id="content_field"
-              name="content_field"
-              placeholder="Write your thoughts here..."
-              required
-            ></textarea>
-
-            <button type="submit" id="post_btn">Post</button>
-            <p class="small-note">
-              To keep our community safe, all posts will be reviewed by an admin before they become publicly visible.
-            </p>
-          </fieldset>
+      <section id="searchResults">
+        <h2 id="searchHeading"></h2>
+        <form action="/search" method="GET">
+          <i class="fa fa-search" aria-hidden="true"></i>
+          <input class="search_bar" name="q" type="text" placeholder="Search posts..." />
+          <button type="submit">Search</button>
         </form>
-
-        <p><a href="/">Cancel</a></p>
       </section>
     </main>
     <footer></footer>

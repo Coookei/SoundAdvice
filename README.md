@@ -8,6 +8,9 @@ A secure web-based blog built with Node.js, Express and PostgreSQL.
 app/
  public/     # static assets rendered on client (html, css, js, images)
  server/     # server-side code
+db/          # SQL migration files
+logs/        # logs such as for auth, posting and comment events
+test/        # unit tests, mirroring the app/ folder structure
 ```
 
 ## Setup
@@ -20,7 +23,7 @@ npm install -g pnpm   # if you don't have pnpm
 pnpm install
 ```
 
-Copy `.env.example` to `.env` and fill in the database credentials.
+Copy `.env.example` to `.env` and fill in with your credentials.
 
 ## Scripts
 

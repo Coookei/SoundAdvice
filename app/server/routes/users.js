@@ -1,46 +1,22 @@
 import { Router } from 'express';
-
-// import contorller functions 
-import { 
-    getUserById, 
-    getUsers, 
-    getMe, 
-    updateBio, 
-    updatePassword, 
-    updateProfilePicture 
-} from '../controllers/users.js';
-
-// middleware for authentcation + authorization 
+import { getUserById, getUsers, getMe, updateBio, updatePassword, updateProfilePicture } from '../controllers/users.js';
 import { requireAdmin, requireAuth } from '../middleware/auth.api.js';
-
-import uploadRouter from '../middleware/upload.js'; 
-
-import { parseUpload } from '../middleware/upload.js'; 
+import { rateLimit } from '../middleware/rate_limit.js';
 
 const router = Router();
 
-// update profile picture - requires authentication + file upload 
-router.use('/pfp', requireAuth, uploadRouter); 
+router.get('/me', requireAuth, getMe); // current user
+router.get('/', requireAdmin, getUsers); // all users, for admin dashboard
+router.get('/:id', requireAdmin, getUserById); // not currently used
 
-// get current user 
-router.get('/me', requireAuth, getMe); 
-
-// get all users - admin only 
-router.get('/', requireAdmin, getUsers);
-
-// gets specific user by id - admin only 
-router.get('/:id', requireAdmin, getUserById);
-
-// update bio requires authentication 
-router.post('/bio', requireAuth, updateBio); 
-
-// update password requires authentication 
-router.post('/password', requireAuth, updatePassword);
-
+router.post('/bio', requireAuth, updateBio); // update own bio
+router.post('/password', requireAuth, updatePassword); // change own password
+// 10 uploads per 10 mins to prevent disk spam
 router.post(
-    '/upload-pfp',
-    parseUpload,
-    updateProfilePicture
-); 
+  '/upload-pfp',
+  requireAuth,
+  rateLimit({ max: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
+  updateProfilePicture
+);
 
 export default router;

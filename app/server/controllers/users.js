@@ -95,74 +95,35 @@ export const updatePassword = async (req, res) => {
   res.json({ success: true });
 }; 
 
-// update profile picture - store in supabase database 
+// update profile picture - stores file on disk, path in DB
+// rate limiting handled by route middleware
 export const updateProfilePicture = async (req, res) => {
   try {
-    if (!req.userId) {
-      return res.status(401).json({ error: 'Not logged in' });
-    }
+    const { fileBuffer, fileExt } = await parseUpload(req);
 
-    // rate limiting to prevent DDoS attacks
-    // initialise timestamp - time of users last upload stored 
-    if (!req.session.lastUpload) req.session.lastUpload = 0;
-
-    // get current time (milliseconds)
-    const now = Date.now();
-
-    // rate limiting to prevent brute force attacks 
-    // block uploads if time since last upload less than 5000 milliseconds
-    if (now - req.session.lastUpload < 5000) {
-      return res.status(429).send('Too many uploads'); 
-    }
-
-    // parse upload 
-    const { fileBuffer, fileExt } = await parseUpload(req); 
-
-    // automated file name 
+    // generated filename, not user-controlled, so prevents path traversal
     const fileName = `user-pfp_${req.userId}_${Date.now()}.${fileExt}`;
+    const uploadPath = path.join('uploads', fileName);
 
-    // safe storage path
-    // filename automatically generated - prevents path traversal attacks 
-    const uploadPath = path.join('uploads', fileName); 
-
-    // get current profile picture
-    const result = await pool.query(
-        'SELECT profile_picture FROM users WHERE id = $1',
-        [req.userId]
-    );
-
-    // delete old profile picture
-    // get profile picture from 1st db row
-    // continue if no row exists 
+    // get current profile picture so we can delete it after saving the new one
+    const result = await pool.query('SELECT profile_picture FROM users WHERE id = $1', [req.userId]);
     const { profile_picture } = result.rows[0] || {};
 
-    // save file
-    await fs.promises.writeFile(uploadPath, fileBuffer); 
+    await fs.promises.writeFile(uploadPath, fileBuffer);
 
     if (profile_picture) {
-        try {
-            // delete old profile picture from disk 
-            await fs.promises.unlink(`.${profile_picture}`); 
-        } catch (err) {
-            // ignore all errors 
-        }
+      try {
+        await fs.promises.unlink(`.${profile_picture}`);
+      } catch {
+        // ignore - old file might already be gone
+      }
     }
 
-     // save path in database
-    await pool.query(
-      'UPDATE users SET profile_picture = $1 WHERE id = $2',
-      [`/uploads/${fileName}`, req.userId]
-    );
+    await pool.query('UPDATE users SET profile_picture = $1 WHERE id = $2', [`/uploads/${fileName}`, req.userId]);
 
-    // update rate limit timestamp
-    req.session.lastUpload = now; 
-
-    // sends successful profile pic upload to frontend  
-    // uploads stored separately 
     res.json({ success: true, path: `/uploads/${fileName}` });
-
   } catch (err) {
-    console.error(err); 
-    res.status(400).json({ error: err.message }); 
+    console.error(err);
+    res.status(400).json({ error: err.message });
   }
-} 
+};

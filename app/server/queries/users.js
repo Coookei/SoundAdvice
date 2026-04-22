@@ -1,17 +1,28 @@
 import pool from '../db.js';
+import { decrypt } from '../crypto.js';
 
 // get all users from the database 
 // specific with info to avoid exposising sensitive data - eg. passwords 
 export const findAll = async () => {
-  const { rows } = await pool.query('SELECT id, username, email, is_admin, created_at, bio, profile_picture FROM users');
-  return rows;
+  const { rows } = await pool.query(
+    'SELECT id, username, email_encrypted, is_admin, created_at, bio, profile_picture FROM users ORDER BY is_admin DESC, created_at ASC'
+  );
+  // pull email_encrypted, and remaining fields into rest, then return all rest properties + email
+  return rows.map(({ email_encrypted, ...rest }) => ({ ...rest, email: decrypt(email_encrypted) }));
 };
 
 // find single users by their id 
 // id passed separately using placeholder to avoid SQL intection 
 export const findById = async (id) => {
-  const { rows } = await pool.query('SELECT id, username, email, is_admin, created_at, bio, profile_picture FROM users WHERE id = $1', [id]);
-  return rows[0];
+  const { rows } = await pool.query(
+    'SELECT id, username, email_encrypted, is_admin, created_at, bio, profile_picture FROM users WHERE id = $1',
+    [id]
+  );
+  if (!rows[0]) return undefined;
+  // destructure to get email_encrypted and the remaing properties
+  const { email_encrypted, ...rest } = rows[0];
+  // rebuild object but without email_encrypted property
+  return { ...rest, email: decrypt(email_encrypted) };
 };
 
 // checks if a user is an admin 

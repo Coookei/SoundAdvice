@@ -44,8 +44,8 @@ function splitBuffer(buffer, delimiter) {
 export function parseUpload(req) {
     return new Promise((resolve, reject) => {
         // authentication check - checks user logged in before allowing upload 
-        if (!req.session || !req.session.userId) {
-            return reject(new Error('Unauthorised')); 
+        if (!req.userId) {
+            return reject(new Error('Unauthorised'));
         }
 
         // checks content type of request using headers 
