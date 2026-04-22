@@ -17,13 +17,13 @@ async function loadProfile() {
         const user = meData.user;
         const userId = user.id; 
 
-        // set profile picture 
+        // set profile picture, hide if none or fails to load
         const img = document.getElementById('profile_picture');
-        img.src = user.profile_picture || '/images/default_pfp.png'; 
-
-        // error handling - fallback if pfp doesn't load, replace with default image 
-        img.onerror = () => {
-            img.src = '/images/default_pfp.png';  
+        if (user.profile_picture) {
+            img.src = user.profile_picture;
+            img.onerror = () => { img.style.display = 'none'; };
+        } else {
+            img.style.display = 'none';
         }
 
         // load profile info 
@@ -69,7 +69,7 @@ function renderPosts(posts) {
         // post metadata - creation date 
         const meta = document.createElement('div');
         meta.classList.add('post-meta');
-        meta.textContent = new Date(post.created_at).toLocalString();
+        meta.textContent = new Date(post.created_at).toLocaleString();
 
         // post content 
         const content = document.createElement('p');
@@ -100,7 +100,7 @@ document.getElementById('upload_pfp_btn').addEventListener('click', async () => 
     formData.append('pfp', file);
 
     // send file to backend endpoint
-    const res = await fetch('/api/users/pfp/upload-pfp', {
+    const res = await fetch('/api/users/upload-pfp', {
         method: 'POST',
         body: formData
     });
