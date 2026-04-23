@@ -11,13 +11,19 @@ async function loadUsers() {
   for (const user of users) {
     const row = document.createElement('tr');
 
-    row.innerHTML = `
-      <td>${user.id}</td>
-      <td>${user.username}</td>
-      <td>xxxxxxxx@gmail.com</td>
-      <td>${user.is_admin ? 'Yes' : 'No'}</td>
-      <td>${new Date(user.created_at).toLocaleDateString()}</td>
-    `;
+    // build cells with textContent so a malicious username can't inject HTML into the admin table
+    const cells = [
+      user.id,
+      user.username,
+      'xxxxxxxx@gmail.com',
+      user.is_admin ? 'Yes' : 'No',
+      new Date(user.created_at).toLocaleDateString(),
+    ];
+    for (const value of cells) {
+      const td = document.createElement('td');
+      td.textContent = value;
+      row.appendChild(td);
+    }
 
     tbody.appendChild(row);
   }

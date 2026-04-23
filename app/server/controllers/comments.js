@@ -2,6 +2,7 @@ import * as commentQueries from '../queries/comments.js';
 import * as postQueries from '../queries/posts.js';
 import * as userQueries from '../queries/users.js';
 import { logPostEvent } from '../log.js';
+import { sanitiseHtml } from '../sanitize.js';
 
 export const getComments = async (req, res) => {
   const { id } = req.params;
@@ -52,7 +53,7 @@ export const createComment = async (req, res) => {
     return res.status(403).json({ error: 'Comments are only allowed on approved posts' }); // informative for author/admin
   }
 
-  const comment = await commentQueries.create(id, req.userId, content.trim());
+  const comment = await commentQueries.create(id, req.userId, sanitiseHtml(content.trim()));
   logPostEvent('comment_created', { userId: req.userId, postId: post.id, commentId: comment.id });
   res.status(201).json({ comment });
 };

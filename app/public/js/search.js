@@ -11,8 +11,8 @@ async function loadSearchResults() {
     return;
   }
 
-  // we showing query back to user so can demonstrate protecting against reflected XSS
-  heading.innerHTML = "Showing results for: '" + query + "'";
+  // reflect query as text, not HTML, to block reflected XSS (<script> in the url becomes visible text)
+  heading.textContent = "Showing results for: '" + query + "'";
 
   const response = await fetch('/api/posts/search?q=' + encodeURIComponent(query)); // need to convert special characters so doesnt break URL, eg space converted to %20
   const { posts } = await response.json(); // search api returns an array of posts so desctrucutre here

@@ -1,7 +1,8 @@
-// import database query functions for posts 
+// import database query functions for posts
 import * as postQueries from '../queries/posts.js';
 import * as userQueries from '../queries/users.js';
 import { logPostEvent } from '../log.js';
+import { sanitiseHtml } from '../sanitize.js';
 
 // get all approved posts 
 export const getPosts = async (req, res) => {
@@ -44,8 +45,12 @@ export const createPost = async (req, res) => {
     return res.status(400).json({ error: 'Title and content are required' });
   }
 
+  // sanitise on write so stored content can only contain whitelisted tags
+  const safeTitle = sanitiseHtml(title);
+  const safeContent = sanitiseHtml(content);
+
   // create new post with authd users id, default status is pending
-  const post = await postQueries.create(req.userId, title, content);
+  const post = await postQueries.create(req.userId, safeTitle, safeContent);
   logPostEvent('post_created', { userId: req.userId, postId: post.id });
   res.status(201).json({ post });
 };
@@ -71,9 +76,12 @@ export const updatePost = async (req, res) => {
     return res.status(400).json({ error: 'Title and content are required' });
   }
 
+  const safeTitle = sanitiseHtml(title);
+  const safeContent = sanitiseHtml(content);
+
   // if an admin updates post, LEAVE state as it, i.e. if approved STAYS approved
   // whereas if user updates post goes back to pending status
-  const updated = await postQueries.update(id, title, content, isAdmin ? post.status : 'pending');
+  const updated = await postQueries.update(id, safeTitle, safeContent, isAdmin ? post.status : 'pending');
   logPostEvent('post_updated', {
     userId: req.userId,
     postId: post.id,
