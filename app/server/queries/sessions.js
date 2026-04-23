@@ -27,6 +27,11 @@ export const deleteOtherSessionsByUserId = async (userId, keepSid) => {
   await pool.query('DELETE FROM sessions WHERE user_id = $1 AND sid != $2', [userId, keepSid]);
 };
 
+// delete every session for a user (called after forgot-password reset)
+export const deleteAllSessionsByUserId = async (userId) => {
+  await pool.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
+};
+
 export const increment2faAttempts = async (userId) => {
   const { rows } = await pool.query(
     'UPDATE sessions SET two_factor_attempts = two_factor_attempts + 1 WHERE user_id = $1 AND pending = true RETURNING two_factor_attempts',

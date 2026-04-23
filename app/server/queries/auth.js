@@ -35,3 +35,29 @@ export const getEmailCode = async (userId) => {
 export const clearEmailCode = async (userId) => {
   await pool.query('UPDATE users SET email_code = NULL, email_code_expires = NULL WHERE id = $1', [userId]);
 };
+
+export const setResetToken = async (userId, token, expiresAt) => {
+  await pool.query(
+    'UPDATE users SET password_reset_token = $1, password_reset_expires = $2 WHERE id = $3',
+    [token, expiresAt, userId]
+  );
+};
+
+export const findByResetToken = async (token) => {
+  const { rows } = await pool.query(
+    'SELECT id, password_reset_expires FROM users WHERE password_reset_token = $1',
+    [token]
+  );
+  return rows[0];
+};
+
+export const clearResetToken = async (userId) => {
+  await pool.query(
+    'UPDATE users SET password_reset_token = NULL, password_reset_expires = NULL WHERE id = $1',
+    [userId]
+  );
+};
+
+export const updatePassword = async (userId, hashedPassword) => {
+  await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userId]);
+};
