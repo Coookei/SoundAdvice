@@ -39,6 +39,14 @@ export function sanitiseHtml(input) {
       continue;
     }
 
+    // only treat '<' as a tag start if the next char could begin a tag name or closing tag
+    const next = input[i + 1] || '';
+    if (next !== '/' && !/[a-zA-Z]/.test(next)) {
+      out += '&lt;';
+      i++;
+      continue;
+    }
+
     const end = input.indexOf('>', i);
     if (end === -1) {
       // stray '<' with no closing, render as literal text

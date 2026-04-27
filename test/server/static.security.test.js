@@ -61,3 +61,33 @@ describe('Session Security', function () {
     expect(src).to.include('Secure');
   });
 });
+
+describe('XSS Prevention', function () {
+  it('should sanitise post title and content on write', function () {
+    const src = fs.readFileSync('app/server/controllers/posts.js', 'utf-8');
+
+    expect(src).to.include("from '../sanitize.js'");
+    expect(src).to.include('sanitiseHtml(title)');
+    expect(src).to.include('sanitiseHtml(content)');
+  });
+
+  it('should sanitise comment content on write', function () {
+    const src = fs.readFileSync('app/server/controllers/comments.js', 'utf-8');
+
+    expect(src).to.include("from '../sanitize.js'");
+    expect(src).to.include('sanitiseHtml(content');
+  });
+
+  it('should not interpolate user data into innerHTML in frontend', function () {
+    // innerHTML with ${...} template literals is a stored/reflected XSS vector.
+    // empty assignments and static strings don't interpolate so they're fine.
+    const jsDir = 'app/public/js';
+    const files = fs.readdirSync(jsDir).filter((f) => f.endsWith('.js'));
+
+    for (const file of files) {
+      const content = fs.readFileSync(`${jsDir}/${file}`, 'utf-8');
+      const unsafe = content.match(/innerHTML\s*=\s*`[^`]*\$\{/g);
+      expect(unsafe, `${file} interpolates user data into innerHTML`).to.be.null;
+    }
+  });
+});
