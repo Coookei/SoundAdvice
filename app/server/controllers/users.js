@@ -43,10 +43,17 @@ export const getUserById = async (req, res) => {
 // update bio
 export const updateBio = async (req, res) => {
   const { bio } = req.body;
+
+  const trimmedBio = bio.trim();
+
+  if (trimmedBio.length > 500) {
+    return res.status(400).json({ error: 'Bio must be 500 characters or less' });
+  }
+
   // update bio of currently logged in user - only currently logged in user can do this to their own bio
   // uses an array - bio = $1, userId = $2
   // prevents SQL injection - actual values not visible in database due to being passed into a separate array
-  await pool.query('UPDATE users SET bio = $1 WHERE id = $2', [bio, req.userId]);
+  await pool.query('UPDATE users SET bio = $1 WHERE id = $2', [trimmedBio, req.userId]);
 
   res.json({ success: true });
 };

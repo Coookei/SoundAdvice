@@ -15,7 +15,7 @@ const router = Router();
 router.get('/', requireAdmin, getUsers); // all users, for admin dashboard
 router.get('/:id', requireAdmin, getUserById); // not currently used
 
-router.post('/bio', requireAuth, updateBio); // update own bio
+router.post('/bio', requireAuth, rateLimit({ max: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }), updateBio); // update own bio
 
 // password change is two-step: request code (rate limited, prevents email spam), then confirm
 router.post(
