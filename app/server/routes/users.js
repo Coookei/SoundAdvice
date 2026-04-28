@@ -2,7 +2,6 @@ import { Router } from 'express';
 import {
   getUserById,
   getUsers,
-  getMe,
   updateBio,
   requestPasswordChange,
   confirmPasswordChange,
@@ -13,7 +12,6 @@ import { rateLimit } from '../middleware/rate_limit.js';
 
 const router = Router();
 
-router.get('/me', requireAuth, getMe); // current user
 router.get('/', requireAdmin, getUsers); // all users, for admin dashboard
 router.get('/:id', requireAdmin, getUserById); // not currently used
 

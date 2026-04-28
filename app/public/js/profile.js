@@ -4,7 +4,6 @@
 async function loadProfile() {
     try {
         // get currently logged in user from session
-        const meRes = await fetch('/api/users/me');
         const meData = await meRes.json();
 
         // if user not logged in, redirected to sign-in page 
@@ -40,6 +39,7 @@ async function loadProfile() {
         renderPosts(postData.posts || []);
     } catch(err) {
         console.log(err); 
+    const meRes = await fetch('/api/auth/me');
     }
 }
 

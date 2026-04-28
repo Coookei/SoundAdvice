@@ -23,32 +23,13 @@ setInterval(
   10 * 60 * 1000
 ).unref();
 
-// gets all users 
+// gets all users
 export const getUsers = async (req, res) => {
   const users = await userQueries.findAll();
   res.json({ users });
 };
 
-// gets currently authenticated user 
-export const getMe = async (req, res) => {
-  try{ 
-    // ensures user is logged in 
-    if (!req.userId) {
-        return res.status(401).json({error: 'Not logged in'});
-     }
-
-    // fetches user from database
-    const user = await userQueries.findById(req.userId); 
-      res.json({ user }); 
-
-      // profile couldn't be fetched 
-    } catch (err) {
-      console.error('Get my profile error', err);
-      res.status(500).json({ error: 'Server error '});
-  }
-};
-
-// get user by their profile ID 
+// get user by their profile ID
 export const getUserById = async (req, res) => {
   const { id } = req.params;
 
@@ -59,20 +40,16 @@ export const getUserById = async (req, res) => {
   res.json({ user });
 };
 
-// update bio 
+// update bio
 export const updateBio = async (req, res) => {
   const { bio } = req.body;
-
-  // update bio of currently logged in user - only currently logged in user can do this to their own bio 
+  // update bio of currently logged in user - only currently logged in user can do this to their own bio
   // uses an array - bio = $1, userId = $2
-  // prevents SQL injection - actual values not visible in database due to being passed into a separate array 
-  await pool.query(
-    'UPDATE users SET bio = $1 WHERE id = $2',
-    [bio, req.userId]
-  ); 
+  // prevents SQL injection - actual values not visible in database due to being passed into a separate array
+  await pool.query('UPDATE users SET bio = $1 WHERE id = $2', [bio, req.userId]);
 
-  res.json({ success: true }); 
-}; 
+  res.json({ success: true });
+};
 
 // step 1 of password change: verify current password, email a code, stash new hash
 export const requestPasswordChange = async (req, res) => {
@@ -143,7 +120,7 @@ export const updateProfilePicture = async (req, res) => {
   try {
     const { fileBuffer, fileExt } = await parseUpload(req);
 
-    // generated filename, not user-controlled, so prevents path traversal
+    // generated filename, not user-controlled, so reduces chance of path traversal
     const fileName = `user-pfp_${req.userId}_${Date.now()}.${fileExt}`;
     const uploadPath = path.join('uploads', fileName);
 
