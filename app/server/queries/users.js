@@ -1,8 +1,8 @@
 import pool from '../db.js';
-import { decrypt } from '../crypto.js';
+import { decrypt } from '../lib/crypto.js';
 
-// get all users from the database 
-// specific with info to avoid exposising sensitive data - eg. passwords 
+// get all users from the database
+// specific with info to avoid exposising sensitive data - eg. passwords
 export const findAll = async () => {
   const { rows } = await pool.query(
     'SELECT id, username, email_encrypted, is_admin, created_at, bio, profile_picture FROM users ORDER BY is_admin DESC, created_at ASC'
@@ -11,8 +11,8 @@ export const findAll = async () => {
   return rows.map(({ email_encrypted, ...rest }) => ({ ...rest, email: decrypt(email_encrypted) }));
 };
 
-// find single users by their id 
-// id passed separately using placeholder to avoid SQL intection 
+// find single users by their id
+// id passed separately using placeholder to avoid SQL intection
 export const findById = async (id) => {
   const { rows } = await pool.query(
     'SELECT id, username, email_encrypted, is_admin, created_at, bio, profile_picture FROM users WHERE id = $1',
@@ -25,17 +25,17 @@ export const findById = async (id) => {
   return { ...rest, email: decrypt(email_encrypted) };
 };
 
-// checks if a user is an admin 
+// checks if a user is an admin
 // id passed using placeholder to prevent SQL injection - userId = $1
 export const isAdmin = async (userId) => {
   const { rows } = await pool.query('SELECT is_admin FROM users WHERE id = $1', [userId]);
 
-  // prevents errors if no user found 
-  // ensures user + is_admin fields exist 
- if (rows[0] && rows[0].is_admin !== undefined) {
-  // if both present, returns true if admin found, false otherwise 
-  return rows[0].is_admin;
- } else {
-  return false;
- }
+  // prevents errors if no user found
+  // ensures user + is_admin fields exist
+  if (rows[0] && rows[0].is_admin !== undefined) {
+    // if both present, returns true if admin found, false otherwise
+    return rows[0].is_admin;
+  } else {
+    return false;
+  }
 };

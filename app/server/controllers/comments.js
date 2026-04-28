@@ -1,8 +1,8 @@
 import * as commentQueries from '../queries/comments.js';
 import * as postQueries from '../queries/posts.js';
 import * as userQueries from '../queries/users.js';
-import { logPostEvent } from '../log.js';
-import { sanitiseHtml } from '../sanitize.js';
+import { logPostEvent } from '../lib/log.js';
+import { sanitiseHtml } from '../lib/sanitize.js';
 
 export const getComments = async (req, res) => {
   const { id } = req.params;

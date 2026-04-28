@@ -66,7 +66,7 @@ describe('XSS Prevention', function () {
   it('should sanitise post title and content on write', function () {
     const src = fs.readFileSync('app/server/controllers/posts.js', 'utf-8');
 
-    expect(src).to.include("from '../sanitize.js'");
+    expect(src).to.include("from '../lib/sanitize.js'");
     expect(src).to.include('sanitiseHtml(title)');
     expect(src).to.include('sanitiseHtml(content)');
   });
@@ -74,7 +74,7 @@ describe('XSS Prevention', function () {
   it('should sanitise comment content on write', function () {
     const src = fs.readFileSync('app/server/controllers/comments.js', 'utf-8');
 
-    expect(src).to.include("from '../sanitize.js'");
+    expect(src).to.include("from '../lib/sanitize.js'");
     expect(src).to.include('sanitiseHtml(content');
   });
 

@@ -1,16 +1,15 @@
-// import database query functions for posts
 import * as postQueries from '../queries/posts.js';
 import * as userQueries from '../queries/users.js';
-import { logPostEvent } from '../log.js';
-import { sanitiseHtml } from '../sanitize.js';
+import { logPostEvent } from '../lib/log.js';
+import { sanitiseHtml } from '../lib/sanitize.js';
 
-// get all approved posts 
+// get all approved posts
 export const getPosts = async (req, res) => {
   const posts = await postQueries.findAllApproved();
   res.json({ posts });
 };
 
-// get single approved post by its ID 
+// get single approved post by its ID
 export const getPostById = async (req, res) => {
   const { id } = req.params;
   const post = await postQueries.findById(id);

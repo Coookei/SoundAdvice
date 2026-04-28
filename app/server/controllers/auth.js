@@ -1,9 +1,9 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { generateCaptcha, verifyCaptcha } from '../captcha.js';
-import { hashCode } from '../crypto.js';
-import { sendEmail } from '../email.js';
-import { logAuthEvent } from '../log.js';
+import { generateCaptcha, verifyCaptcha } from '../lib/captcha.js';
+import { hashCode } from '../lib/crypto.js';
+import { sendEmail } from '../lib/email.js';
+import { logAuthEvent } from '../lib/log.js';
 import { createSession, destroySession, regenerateSession } from '../middleware/session.js';
 import * as authQueries from '../queries/auth.js';
 import * as sessionQueries from '../queries/sessions.js';

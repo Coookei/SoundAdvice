@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { sanitiseHtml } from '../../app/server/sanitize.js';
+import { sanitiseHtml } from '../../../app/server/lib/sanitize.js';
 
 describe('HTML Sanitiser', function () {
   it('should keep whitelisted tags intact', function () {

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { generateCaptcha, verifyCaptcha } from '../../app/server/captcha.js';
+import { generateCaptcha, verifyCaptcha } from '../../../app/server/lib/captcha.js';
 
 describe('Captcha Verification', function () {
   it('should reject wrong answers and invalid tokens', async function () {
