@@ -5,7 +5,7 @@ import path from 'path';
 import pool from '../db.js';
 import { decrypt, hashCode } from '../crypto.js';
 import { sendEmail } from '../email.js';
-import { parseUpload } from '../middleware/upload.js';
+import { parseFileUpload } from '../lib/upload.js';
 import * as authQueries from '../queries/auth.js';
 import * as sessionQueries from '../queries/sessions.js';
 import * as userQueries from '../queries/users.js';
@@ -118,9 +118,9 @@ export const confirmPasswordChange = async (req, res) => {
 // rate limiting handled by route middleware
 export const updateProfilePicture = async (req, res) => {
   try {
-    const { fileBuffer, fileExt } = await parseUpload(req);
+    const { fileBuffer, fileExt } = await parseFileUpload(req);
 
-    // generated filename, not user-controlled, so reduces chance of path traversal
+    // generated filename, not user-controlled
     const fileName = `user-pfp_${req.userId}_${Date.now()}.${fileExt}`;
     const uploadPath = path.join('uploads', fileName);
 
