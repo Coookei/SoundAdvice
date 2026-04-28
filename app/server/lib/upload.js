@@ -75,6 +75,7 @@ export function parseFileUpload(req) {
       // protection against large requests - if file size too large, stop uplodad
       if (size > max_file_size) {
         aborted = true;
+        req.destroy(); // STOPS client from sending anymore data
         return reject(new Error('File too large'));
       }
 
@@ -84,6 +85,7 @@ export function parseFileUpload(req) {
 
     // process file after upload
     req.on('end', async () => {
+      if (aborted) return; // dont parse partial chunks if upload aborted
       try {
         // combine all chunks into single buffer
         const buffer = Buffer.concat(chunks);
