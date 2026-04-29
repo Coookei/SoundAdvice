@@ -24,9 +24,12 @@ async function loadProfile() {
     const img = document.getElementById('profile_picture');
     if (user.profile_picture) {
       img.src = user.profile_picture;
+
+    // prevents broken image display 
       img.onerror = () => {
         img.style.display = 'none';
       };
+
     } else {
       img.style.display = 'none';
     }
@@ -52,12 +55,13 @@ async function loadProfile() {
 function renderPosts(posts) {
   // container to hold all posts
   const container = document.getElementById('posts_container');
-  container.innerHTML = ''; // existing content cleared before rendering
+  container.replaceChildren();
 
   // message if no posts yet
   if (posts.length == 0) {
-    container.innerHTML = '<p> No posts yet </p>';
-    return;
+    const empty = document.createElement('p'); 
+    empty.textContent = 'No posts yet';
+    container.appendChild(empty); 
   }
 
   // loop through each post + create elements dynamically
@@ -143,7 +147,7 @@ document.getElementById('request_password_btn').addEventListener('click', async 
 
   if (!currentPassword || !newPassword) return alert('Enter both current and new passwords');
 
-//   request verification code from server 
+    // request verification code from server 
     const res = await csrfFetch('/api/users/password/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
