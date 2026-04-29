@@ -4,7 +4,10 @@
 async function loadProfile() {
   try {
     // get currently logged in user from session
-    const meRes = await fetch('/api/auth/me');
+    const meRes = await fetch('/api/users/me', {
+        credentials: 'include' // ensures cookie is sent 
+    }); 
+
     const meData = await meRes.json();
 
     // if user not logged in, redirected to sign-in page
@@ -87,7 +90,7 @@ function renderPosts(posts) {
 }
 
 // initialise profile
-loadProfile();
+loadProfile(); 
 
 // profile actions - upload profile pic
 document.getElementById('upload_pfp_btn').addEventListener('click', async () => {
@@ -101,11 +104,11 @@ document.getElementById('upload_pfp_btn').addEventListener('click', async () => 
   const formData = new FormData();
   formData.append('pfp', file);
 
-  // send file to backend endpoint
-  const res = await fetch('/api/users/upload-pfp', {
-    method: 'POST',
-    body: formData,
-  });
+    // send file to backend endpoint
+    const res = await csrfFetch('/api/users/upload-pfp', {
+        method: 'POST',
+        body: formData
+    });
 
   // reload page if upload reflects profile picture
   if (res.ok) {
@@ -121,12 +124,12 @@ document.getElementById('save_bio_btn').addEventListener('click', async () => {
 
   if (!bio) return alert('Enter a bio');
 
-  // send updated bio as json
-  const res = await fetch('/api/users/bio', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ bio }),
-  });
+    // send updated bio as json 
+    const res = await csrfFetch('/api/users/bio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bio })
+    });
 
   // reload page if bio upload successful
   if (res.ok) location.reload();
@@ -140,16 +143,18 @@ document.getElementById('request_password_btn').addEventListener('click', async 
 
   if (!currentPassword || !newPassword) return alert('Enter both current and new passwords');
 
-  const res = await fetch('/api/users/password/request', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ currentPassword, newPassword }),
-  });
+//   request verification code from server 
+    const res = await csrfFetch('/api/users/password/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword })
+    });
 
   const data = await res.json();
 
   if (res.ok) {
     alert('Code sent to your email.');
+    // show input field for verification code 
     document.getElementById('password_code_row').style.display = 'flex';
   } else {
     alert(data.error || 'Failed to send code');
@@ -160,16 +165,18 @@ document.getElementById('request_password_btn').addEventListener('click', async 
 document.getElementById('confirm_password_btn').addEventListener('click', async () => {
   const code = document.getElementById('password_code').value;
 
-  const res = await fetch('/api/users/password/confirm', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code }),
-  });
+    // send verification code to confirm password change 
+    const res = await csrfFetch('/api/users/password/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+    });
 
   const data = await res.json();
 
   if (res.ok) {
     alert('Password updated. Other devices have been logged out.');
+    // reload - new session 
     location.reload();
   } else {
     alert(data.error || 'Failed to update password');

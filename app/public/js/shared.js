@@ -33,7 +33,7 @@ document.querySelector('#logout_btn')?.addEventListener('click', async (e) => {
   e.preventDefault();
 
   // call logout endpoint 
-  const res = await fetch('/api/auth/logout', { method: 'POST' });
+  const res = await csrfFetch('/api/auth/logout', { method: 'POST' });
   const data = await res.json();
 
   // redirect to URL or sign-in page 

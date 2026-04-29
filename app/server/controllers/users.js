@@ -29,6 +29,25 @@ export const getUsers = async (req, res) => {
   res.json({ users });
 };
 
+// gets currently authenticated user 
+export const getMe = async (req, res) => {
+  try{ 
+    // ensures user is logged in 
+    if (!req.userId) {
+        return res.status(401).json({error: 'Not logged in'});
+     }
+
+    // fetches user from database
+    const user = await userQueries.findById(req.userId); 
+      res.json({ user }); 
+
+      // profile couldn't be fetched 
+    } catch (err) {
+      console.error('Get my profile error', err);
+      res.status(500).json({ error: 'Server error '});
+  }
+};
+
 // get user by their profile ID
 export const getUserById = async (req, res) => {
   const { id } = req.params;

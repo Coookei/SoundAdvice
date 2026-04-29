@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { headersMiddleware } from './middleware/headers.js';
 import { sessionMiddleware } from './middleware/session.js';
 import indexRouter from './routes/index.js';
+import { attachCSRFCookie, parseCookies } from './middleware/csrf.js';   
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -14,7 +15,9 @@ const app = express();
 app.use(headersMiddleware); // security headers applied to every response
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(sessionMiddleware); // attach req.userId from session cookie on every request
+app.use(sessionMiddleware); // attach req.userId from session cookie on every request 
+app.use(parseCookies); // parse cookies maually 
+app.use(attachCSRFCookie); //  attach CSRF cookie onto every token 
 app.use('/html', (_req, res) => res.status(403).send('Forbidden')); // block direct access to html files, only served via protected page routes
 app.use(express.static(join(__dirname, '../public'))); // serve ALL static assets from public dir, while protecting from traversing out in url eg ../../
 app.use('/uploads', express.static(path.resolve('uploads'))); // serve uploaded profile pictures
