@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import pool from '../lib/db.js';
 
 // get all approved posts - status must be approved
 export const findAllApproved = async () => {

@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import pool from '../lib/db.js';
 import { encrypt, decrypt, hashForLookup } from '../lib/crypto.js';
 
 export const findByEmail = async (email) => {

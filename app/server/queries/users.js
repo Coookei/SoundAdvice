@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import pool from '../lib/db.js';
 import { decrypt } from '../lib/crypto.js';
 
 // get all users from the database

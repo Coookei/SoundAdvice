@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import fs from 'fs';
 import path from 'path';
-import pool from '../db.js';
+import pool from '../lib/db.js';
 import { decrypt, hashCode } from '../lib/crypto.js';
 import { sendEmail } from '../lib/email.js';
 import { parseFileUpload } from '../lib/upload.js';

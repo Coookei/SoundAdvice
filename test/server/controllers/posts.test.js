@@ -10,7 +10,7 @@ import {
   updatePostStatus,
   searchPosts,
 } from '../../../app/server/controllers/posts.js';
-import pool from '../../../app/server/db.js';
+import pool from '../../../app/server/lib/db.js';
 
 describe('Testing getPosts', () => {
   it('should return a list of posts', async () => {

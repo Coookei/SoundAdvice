@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import pool from '../lib/db.js';
 
 export const findSessionBySid = async (sid) => {
   const { rows } = await pool.query('SELECT user_id, pending, expires_at FROM sessions WHERE sid = $1', [sid]);
