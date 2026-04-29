@@ -1,5 +1,6 @@
 // profile page logic
 
+// TODO MOVE THIS CHECK TO THE SERVER AS WOULD BE MORE SUITED & RELEVENAT THERE
 // safe image path
 // prevents xss via malicious urls
 function isSafeImagePath(url) {
@@ -14,12 +15,12 @@ function isSafeImagePath(url) {
     /^\/uploads\/[a-zA-Z0-9_\-\.]+\.png$/.test(url)
   );
 }
+
 // load users profile
 async function loadProfile() {
   try {
     // get currently logged in user from session
     const meRes = await fetch('/api/auth/me');
-
     const meData = await meRes.json();
 
     // if user not logged in, redirected to sign-in page
@@ -74,6 +75,7 @@ function renderPosts(posts) {
     const empty = document.createElement('p');
     empty.textContent = 'No posts yet';
     container.appendChild(empty);
+    return;
   }
 
   // loop through each post + create elements dynamically
