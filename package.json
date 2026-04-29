@@ -1,7 +1,7 @@
 {
   "name": "soundadvice",
   "version": "1.0.0",
-  "description": "A music help blog",
+  "description": "A Redit-style music help blog, focusing on secure coding over user interface.",
   "main": "app/server/index.js",
   "type": "module",
   "scripts": {

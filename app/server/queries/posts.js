@@ -1,5 +1,6 @@
-import pool from '../db.js';
+import pool from '../lib/db.js';
 
+// get all approved posts - status must be approved
 export const findAllApproved = async () => {
   // in all queries explicitly select fields to return over *, to prevent leaking data
   const { rows } = await pool.query(
@@ -66,6 +67,15 @@ export const searchApproved = async (query) => {
   const { rows } = await pool.query(
     "SELECT p.id, p.title, p.content, p.created_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.status = 'approved' AND (p.title ILIKE $1 OR p.content ILIKE $1) ORDER BY p.created_at DESC",
     [`%${query}%`]
+  );
+  return rows;
+};
+
+// get only approved posts by user ID (for public profile page view)
+export const findByUser = async (userId) => {
+  const { rows } = await pool.query(
+    "SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.user_id = $1 AND p.status = 'approved' ORDER BY p.created_at DESC",
+    [userId]
   );
   return rows;
 };

@@ -5,6 +5,7 @@ import {
   getAdminPosts,
   getMyPosts,
   getPostById,
+  getPostByUser,
   getPosts,
   updatePost,
   updatePostStatus,
@@ -16,11 +17,12 @@ import { rateLimit } from '../middleware/rate_limit.js';
 
 const router = Router();
 
-// GET /my, /search and /admin routes need be before /:id to avoid conflicts
+// GET /my, /search, /admin and /user routes need be before /:id to avoid conflicts
 
 router.get('/', getPosts); // get all approved public posts
 router.get('/search', searchPosts); // search approved posts with a query
 router.get('/my', requireAuth, getMyPosts); // all posts of any status for current authd user
+router.get('/user/:userId', getPostByUser); // approved posts for a given user (profile page)
 // can create 10 posts every 10 mins to prevent spam
 router.post('/', requireAuth, rateLimit({ max: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }), createPost); // authd users can create posts
 router.get('/admin', requireAdmin, getAdminPosts); // admin only to get ALL posts of any status for admin panel

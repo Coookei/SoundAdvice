@@ -1,8 +1,9 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { generateCaptcha, verifyCaptcha } from '../captcha.js';
-import { sendEmail } from '../email.js';
-import { logAuthEvent } from '../log.js';
+import { generateCaptcha, verifyCaptcha } from '../lib/captcha.js';
+import { hashCode } from '../lib/crypto.js';
+import { sendEmail } from '../lib/email.js';
+import { logAuthEvent } from '../lib/log.js';
 import { createSession, destroySession, regenerateSession } from '../middleware/session.js';
 import * as authQueries from '../queries/auth.js';
 import * as sessionQueries from '../queries/sessions.js';
@@ -71,7 +72,7 @@ export const login = async (req, res) => {
   if (user.is_admin) {
     const code = crypto.randomInt(100000, 999999).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-    const codeHash = hmacHash(code); // hash with HMAC and 2FA secret stored in .env. attacker unable to get 2fa code even if db compromised
+    const codeHash = hashCode(code); // hash with HMAC and 2FA secret stored in .env. attacker unable to get 2fa code even if db compromised
 
     await authQueries.setEmailCode(user.id, codeHash, expiresAt);
     await sendEmail(email, 'Your SoundAdvice login code', `Your code is: ${code}. It expires in 10 minutes.`);
@@ -113,7 +114,7 @@ export const verify2fa = async (req, res) => {
   }
 
   // timing safe comparison of HMAC hashes
-  const submittedHash = hmacHash(code.toString());
+  const submittedHash = hashCode(code.toString());
   const submittedBuffer = Buffer.from(submittedHash, 'hex');
   const storedBuffer = Buffer.from(user.email_code, 'hex');
   const match = crypto.timingSafeEqual(submittedBuffer, storedBuffer);
@@ -156,6 +157,79 @@ export const me = async (req, res) => {
   res.json({ user: user || null });
 };
 
-function hmacHash(value) {
-  return crypto.createHmac('sha256', process.env['2FA_SECRET']).update(value).digest('hex');
-}
+// forgot password step 1: email a code if the account exists, but always respond the same
+// way (prevents account enumeration via the reset form)
+export const forgotRequest = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  const user = await authQueries.findByEmail(email);
+
+  if (user) {
+    const code = crypto.randomInt(100000, 999999).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await authQueries.setEmailCode(user.id, hashCode(code), expiresAt);
+    await sendEmail(email, 'SoundAdvice password reset code', `Your code is: ${code}. It expires in 10 minutes.`);
+    await logAuthEvent('forgot_requested', { userId: user.id, ip: req.ip });
+  } else {
+    await logAuthEvent('forgot_unknown_email', { ip: req.ip });
+  }
+
+  res.json({ message: 'If that email is registered, a code has been sent.' });
+};
+
+// step 2: verify the code and issue a short-lived reset token. this token proves the user
+// passed the email check, so the reset endpoint can trust them without another session
+export const forgotVerify = async (req, res) => {
+  const { email, code } = req.body;
+
+  if (!email || !code) {
+    return res.status(400).json({ error: 'Email and code are required' });
+  }
+
+  const user = await authQueries.findByEmail(email);
+  const stored = user ? await authQueries.getEmailCode(user.id) : null;
+
+  if (!user || !stored?.email_code || new Date() > new Date(stored.email_code_expires)) {
+    return res.status(400).json({ error: 'Invalid or expired code' });
+  }
+
+  const submitted = Buffer.from(hashCode(code.toString()), 'hex');
+  const storedBuf = Buffer.from(stored.email_code, 'hex');
+  if (submitted.length !== storedBuf.length || !crypto.timingSafeEqual(submitted, storedBuf)) {
+    await logAuthEvent('forgot_bad_code', { userId: user.id, ip: req.ip });
+    return res.status(400).json({ error: 'Invalid or expired code' });
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  await authQueries.setResetToken(user.id, token, expiresAt);
+  await authQueries.clearEmailCode(user.id);
+
+  res.json({ token });
+};
+
+// step 3: apply the new password and wipe every session so any attacker is kicked out
+export const forgotReset = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: 'Token and new password are required' });
+  }
+
+  const user = await authQueries.findByResetToken(token);
+  if (!user || new Date() > new Date(user.password_reset_expires)) {
+    return res.status(400).json({ error: 'Invalid or expired reset link' });
+  }
+
+  const hashed = await bcrypt.hash(newPassword + process.env.PEPPER, 12);
+  await authQueries.updatePassword(user.id, hashed);
+  await authQueries.clearResetToken(user.id);
+  await sessionQueries.deleteAllSessionsByUserId(user.id);
+  await logAuthEvent('forgot_reset', { userId: user.id, ip: req.ip });
+
+  res.json({ message: 'Password updated', redirect: '/sign-in' });
+};

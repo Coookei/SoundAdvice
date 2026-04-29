@@ -34,6 +34,7 @@ const PENDING_MAX_AGE = 10 * 60 * 1000; // 2FA flow lasts 10 minutes
 export async function sessionMiddleware(req, res, next) {
   req.userId = null;
   req.pendingUserId = null;
+  req.sid = null;
 
   const sid = parseSid(req);
   if (!sid) return next();
@@ -52,6 +53,7 @@ export async function sessionMiddleware(req, res, next) {
     return next();
   }
 
+  req.sid = sid;
   if (session.pending) {
     req.pendingUserId = session.user_id;
   } else {

@@ -1,5 +1,15 @@
 import { Router } from 'express';
-import { getCaptcha, register, login, verify2fa, logout, me } from '../controllers/auth.js';
+import {
+  getCaptcha,
+  register,
+  login,
+  verify2fa,
+  logout,
+  me,
+  forgotRequest,
+  forgotVerify,
+  forgotReset,
+} from '../controllers/auth.js';
 import { rateLimit } from '../middleware/rate_limit.js';
 import { requireGuest, requirePending, requireSession } from '../middleware/auth.api.js';
 
@@ -28,5 +38,25 @@ router.post(
 
 router.post('/logout', requireSession, logout);
 router.get('/me', me); // return user if logged in otherwise null, so no auth required
+
+// forgot-password flow. request is tighter than verify/reset because it triggers emails
+router.post(
+  '/forgot-password/request',
+  requireGuest,
+  rateLimit({ max: 3, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
+  forgotRequest
+);
+router.post(
+  '/forgot-password/verify',
+  requireGuest,
+  rateLimit({ max: 6, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
+  forgotVerify
+);
+router.post(
+  '/forgot-password/reset',
+  requireGuest,
+  rateLimit({ max: 5, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
+  forgotReset
+);
 
 export default router;

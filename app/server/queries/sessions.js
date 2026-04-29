@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import pool from '../lib/db.js';
 
 export const findSessionBySid = async (sid) => {
   const { rows } = await pool.query('SELECT user_id, pending, expires_at FROM sessions WHERE sid = $1', [sid]);
@@ -20,6 +20,16 @@ export const deleteSessionBySid = async (sid) => {
 
 export const deletePendingSessionsByUserId = async (userId) => {
   await pool.query('DELETE FROM sessions WHERE user_id = $1 AND pending = true', [userId]);
+};
+
+// delete all sessions for a user except the one in use (called after password change)
+export const deleteOtherSessionsByUserId = async (userId, keepSid) => {
+  await pool.query('DELETE FROM sessions WHERE user_id = $1 AND sid != $2', [userId, keepSid]);
+};
+
+// delete every session for a user (called after forgot-password reset)
+export const deleteAllSessionsByUserId = async (userId) => {
+  await pool.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
 };
 
 export const increment2faAttempts = async (userId) => {

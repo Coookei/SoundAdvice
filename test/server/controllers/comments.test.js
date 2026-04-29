@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { createComment, deleteComment, getComments } from '../../../app/server/controllers/comments.js';
-import pool from '../../../app/server/db.js';
+import pool from '../../../app/server/lib/db.js';
 
 describe('Testing getComments', () => {
   it('should return comments for an approved post', async () => {

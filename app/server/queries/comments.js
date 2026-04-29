@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import pool from '../lib/db.js';
 
 export const findByPostId = async (postId) => {
   const { rows } = await pool.query(

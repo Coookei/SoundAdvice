@@ -51,13 +51,16 @@
         <h3>Comments</h3>
         <div id="commentsList"></div>
 
-        <p id="loginToComment" style="display: none">
-          <a href="/sign-in">Log in</a> to leave a comment.
-        </p>
+        <p id="loginToComment" style="display: none"><a href="/sign-in">Log in</a> to leave a comment.</p>
 
         <form id="commentForm" style="display: none">
           <label for="comment_field">Leave a comment:</label>
-          <textarea id="comment_field" name="comment_field" placeholder="Write your comment..." maxlength="2000"></textarea>
+          <textarea
+            id="comment_field"
+            name="comment_field"
+            placeholder="Write your comment..."
+            maxlength="2000"
+          ></textarea>
           <button type="submit">Submit</button>
         </form>
       </section>

@@ -43,3 +43,9 @@ export function decrypt(encrypted) {
 export function hashForLookup(value) {
   return crypto.createHmac('sha256', HMAC_KEY).update(value.toLowerCase()).digest('hex');
 }
+
+// hashes a short code (2FA, password change) with a separate secret so a DB leak
+// doesn't expose active codes. used for both login 2FA and password change verification.
+export function hashCode(code) {
+  return crypto.createHmac('sha256', process.env['2FA_SECRET']).update(code).digest('hex');
+}
