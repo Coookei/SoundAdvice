@@ -39,3 +39,16 @@ export const isAdmin = async (userId) => {
     return false;
   }
 };
+
+export const updateBio = async (userId, bio) => {
+  await pool.query('UPDATE users SET bio = $1 WHERE id = $2', [bio, userId]);
+};
+
+export const getProfilePicture = async (userId) => {
+  const { rows } = await pool.query('SELECT profile_picture FROM users WHERE id = $1', [userId]);
+  return rows[0]?.profile_picture;
+};
+
+export const updateProfilePicture = async (userId, path) => {
+  await pool.query('UPDATE users SET profile_picture = $1 WHERE id = $2', [path, userId]);
+};

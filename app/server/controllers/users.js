@@ -2,7 +2,6 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import fs from 'fs';
 import path from 'path';
-import pool from '../lib/db.js';
 import { decrypt, hashCode } from '../lib/crypto.js';
 import { sendEmail } from '../lib/email.js';
 import { parseFileUpload } from '../lib/upload.js';
@@ -54,10 +53,7 @@ export const updateBio = async (req, res) => {
     return res.status(400).json({ error: 'Bio must be 500 characters or less' });
   }
 
-  // update bio of currently logged in user - only currently logged in user can do this to their own bio
-  // uses an array - bio = $1, userId = $2
-  // prevents SQL injection - actual values not visible in database due to being passed into a separate array
-  await pool.query('UPDATE users SET bio = $1 WHERE id = $2', [bio, req.userId]);
+  await userQueries.updateBio(req.userId, bio);
 
   res.json({ success: true });
 };
@@ -70,8 +66,7 @@ export const requestPasswordChange = async (req, res) => {
     return res.status(400).json({ error: 'Current and new password are required' });
   }
 
-  const { rows } = await pool.query('SELECT password, email_encrypted FROM users WHERE id = $1', [req.userId]);
-  const user = rows[0];
+  const user = await authQueries.getPasswordAndEmail(req.userId);
   const valid = await bcrypt.compare(currentPassword + process.env.PEPPER, user.password);
   if (!valid) {
     return res.status(400).json({ error: 'Incorrect current password' });
@@ -115,7 +110,7 @@ export const confirmPasswordChange = async (req, res) => {
     return res.status(400).json({ error: 'Invalid code' });
   }
 
-  await pool.query('UPDATE users SET password = $1 WHERE id = $2', [pending.newHash, req.userId]);
+  await authQueries.updatePassword(req.userId, pending.newHash);
   await authQueries.clearEmailCode(req.userId);
   pendingChanges.delete(req.userId);
 
@@ -141,20 +136,19 @@ export const updateProfilePicture = async (req, res) => {
     const uploadPath = path.join('uploads', fileName);
 
     // get current profile picture so we can delete it after saving the new one
-    const result = await pool.query('SELECT profile_picture FROM users WHERE id = $1', [req.userId]);
-    const { profile_picture } = result.rows[0] || {};
+    const oldPicture = await userQueries.getProfilePicture(req.userId);
 
     await fs.promises.writeFile(uploadPath, fileBuffer);
 
-    if (profile_picture) {
+    if (oldPicture) {
       try {
-        await fs.promises.unlink(`.${profile_picture}`);
+        await fs.promises.unlink(`.${oldPicture}`);
       } catch {
         // ignore - old file might already be gone
       }
     }
 
-    await pool.query('UPDATE users SET profile_picture = $1 WHERE id = $2', [`/uploads/${fileName}`, req.userId]);
+    await userQueries.updateProfilePicture(req.userId, `/uploads/${fileName}`);
 
     res.json({ success: true, path: `/uploads/${fileName}` });
   } catch (err) {

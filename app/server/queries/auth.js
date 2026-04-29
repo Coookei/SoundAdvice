@@ -59,3 +59,8 @@ export const clearResetToken = async (userId) => {
 export const updatePassword = async (userId, hashedPassword) => {
   await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userId]);
 };
+
+export const getPasswordAndEmail = async (userId) => {
+  const { rows } = await pool.query('SELECT password, email_encrypted FROM users WHERE id = $1', [userId]);
+  return rows[0];
+};
