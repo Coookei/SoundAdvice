@@ -138,6 +138,7 @@ export const updateProfilePicture = async (req, res) => {
     // get current profile picture so we can delete it after saving the new one
     const oldPicture = await userQueries.getProfilePicture(req.userId);
 
+    await fs.promises.mkdir('uploads', { recursive: true }); // ensure /uploads dir exists
     await fs.promises.writeFile(uploadPath, fileBuffer);
 
     if (oldPicture) {
