@@ -32,10 +32,10 @@ export function attachCSRFCookie(req, res, next) {
 
     // sends token as cookie
     res.cookie('csrf_token', token, {
-      httpOnly: false, // needs to be false, so it can be read by clientside JS
+      httpOnly: false, // HttpOnly=False ALLOWS javascript on page to read the cookie, needed for client to read and send in header
       secure: process.env.NODE_ENV === 'production', // Use Secure cookies in production to ensure the cookie is only sent over HTTPS
-      sameSite: 'lax', // sends cookie for normal site use and external links, but blocks most cross-site requests
-      path: '/', // cookie available across whole site
+      sameSite: 'strict', // prevents cookie from being sent in any cross-site requests, strongest CSRF protection
+      path: '/', // cookie available across whole site on all routes
     });
   }
   next();
