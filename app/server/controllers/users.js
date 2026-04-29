@@ -105,6 +105,10 @@ export const updateBio = async (req, res) => {
 
   bio = bio.trim();
 
+  if (bio.length > 500) {
+    return res.status(400).json({ error: 'Bio must be 500 characters or less' });
+  }
+
   // update bio of currently logged in user - only currently logged in user can do this to their own bio
   // uses an array - bio = $1, userId = $2
   // prevents SQL injection - actual values not visible in database due to being passed into a separate array
