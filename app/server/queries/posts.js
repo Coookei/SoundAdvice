@@ -1,6 +1,6 @@
 import pool from '../db.js';
 
-// get all approved posts - status must be approved 
+// get all approved posts - status must be approved
 export const findAllApproved = async () => {
   // in all queries explicitly select fields to return over *, to prevent leaking data
   const { rows } = await pool.query(

@@ -29,7 +29,6 @@ describe('Testing getComments', () => {
     };
 
     await getComments(req, res);
-    
 
     expect(res.body.comments).to.be.an('array');
     expect(res.body.comments.length).to.equal(2);
