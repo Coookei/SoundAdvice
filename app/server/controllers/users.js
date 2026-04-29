@@ -9,53 +9,6 @@ import { parseFileUpload } from '../lib/upload.js';
 import * as authQueries from '../queries/auth.js';
 import * as sessionQueries from '../queries/sessions.js';
 import * as userQueries from '../queries/users.js';
-import { type } from 'os';
-
-// validate pfp uploads
-const PNG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-
-// file upload size limit
-const limits = {
-  png: 2 * 1024 * 1024, // 2MB upload
-};
-
-// detects file type using magic bytes
-function detectFileType(buffer) {
-  // ensures input is valid buffer
-  if (!Buffer.isBuffer(buffer)) {
-    return null;
-  }
-
-  // check first 8 bytes of file against png signature
-  const isPNG = buffer.length >= 8 && buffer.subarray(0, 8).equals(PNG);
-
-  // return null if not png
-  return isPNG ? 'png' : null;
-}
-
-// va.idate upload
-function validateUpload(fileBuffer) {
-  // ensure input is binary data
-  if (!Buffer.isBuffer(fileBuffer)) {
-    return null;
-  }
-
-  // detect actual file type
-  const type = detectFileType(fileBuffer);
-
-  // reject if unsuported
-  if (!type) {
-    return null;
-  }
-
-  // enforce size linmits - prevents DDoS attacks
-  if (fileBuffer.length > limits[type]) {
-    return null;
-  }
-
-  // return safe file type
-  return type;
-}
 
 // hold the new password hash in memory until the email code is verified - avoids adding a DB column for a short-lived value
 const pendingChanges = new Map();
@@ -186,21 +139,9 @@ export const updateProfilePicture = async (req, res) => {
   try {
     const { fileBuffer, fileExt } = await parseFileUpload(req);
 
-    const type = validateUpload(fileBuffer);
-
-    if (!type) {
-      return res.status(400).json({ error: 'Invalid image upload' });
-    }
-
     // only allow PNG explicitly
-    if (type !== 'png') {
+    if (fileExt !== 'png') {
       return res.status(400).json({ error: 'Only PNG allowed' });
-    }
-
-    const max_size = 2 * 1024 * 1024;
-
-    if (fileBuffer.length > max_size) {
-      return res.status(400).json({ error: 'File too large' });
     }
 
     // generated filename, not user-controlled
