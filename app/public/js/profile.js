@@ -1,21 +1,5 @@
 // profile page logic
 
-// TODO MOVE THIS CHECK TO THE SERVER AS WOULD BE MORE SUITED & RELEVENAT THERE
-// safe image path
-// prevents xss via malicious urls
-function isSafeImagePath(url) {
-  return (
-    typeof url === 'string' &&
-    // only allow paths that start with uploads
-    // must contain safe characters - letters, numbers, _ , -, .
-    // blocks javascript or other urls
-    // blocks directory traversal (../)
-    // blocks injected html / special characters
-    // only allows pngs
-    /^\/uploads\/[a-zA-Z0-9_\-\.]+\.png$/.test(url)
-  );
-}
-
 // load users profile
 async function loadProfile() {
   try {
@@ -35,8 +19,7 @@ async function loadProfile() {
 
     // set profile picture, hide if none or fails to load
     const img = document.getElementById('profile_picture');
-    // user pfp must be safe
-    if (user.profile_picture && isSafeImagePath(user.profile_picture)) {
+    if (user.profile_picture) {
       img.src = user.profile_picture;
 
       // prevents broken image display
