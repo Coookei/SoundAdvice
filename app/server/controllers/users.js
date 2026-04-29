@@ -26,12 +26,6 @@ setInterval(
 // gets all users
 export const getUsers = async (req, res) => {
   const users = await userQueries.findAll();
-
-  // bios as plain text
-  for (const user of users) {
-    user.bio = user.bio || '';
-  }
-
   res.json({ users });
 };
 
@@ -42,8 +36,6 @@ export const getUserById = async (req, res) => {
   const user = await userQueries.findById(id);
 
   if (!user) return res.status(404).json({ error: 'User not found' });
-
-  user.bio = user.bio || '';
 
   res.json({ user });
 };

@@ -34,7 +34,7 @@ async function loadProfile() {
     document.getElementById('profile_username').textContent = user.username;
     document.getElementById('profile_email').textContent = user.email;
     document.getElementById('profile_joined').textContent = 'Joined: ' + new Date(user.created_at).toLocaleDateString(); // date profile joined, converted to correct timezone based on language settings
-    document.getElementById('profile_bio').textContent = user.bio || 'No bio yet'; // allows sanitised input
+    document.getElementById('profile_bio').textContent = user.bio || 'No bio yet';
 
     // fetch posts - uses user id to query posts
     const postRes = await fetch(`/api/posts/user/${userId}`);
