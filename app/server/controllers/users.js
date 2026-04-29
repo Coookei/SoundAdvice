@@ -77,6 +77,12 @@ setInterval(
 // gets all users
 export const getUsers = async (req, res) => {
   const users = await userQueries.findAll();
+
+  // bios as plain text 
+  for (const user of users) {
+    user.bio = user.bio || ''; 
+  }
+
   res.json({ users });
 };
 
@@ -90,7 +96,13 @@ export const getMe = async (req, res) => {
 
     // fetches user from database
     const user = await userQueries.findById(req.userId); 
-      res.json({ user }); 
+
+    // plain text bios 
+    if (user) {
+      user.bio = user.bio || ''
+    }
+
+    res.json({ user }); 
 
       // profile couldn't be fetched 
     } catch (err) {
@@ -107,6 +119,8 @@ export const getUserById = async (req, res) => {
 
   if (!user) return res.status(404).json({ error: 'User not found' });
 
+    user.bio = user.bio || ''; 
+
   res.json({ user });
 };
 
@@ -118,7 +132,7 @@ export const updateBio = async (req, res) => {
     return res.status(400).json({ error: 'Invalid bio type' });
   }
 
-  bio = bio.trim();  
+  bio = bio.trim();   
 
   // update bio of currently logged in user - only currently logged in user can do this to their own bio
   // uses an array - bio = $1, userId = $2

@@ -1,5 +1,18 @@
 // profile page logic
 
+// safe image path 
+// prevents xss via malicious urls 
+function isSafeImagePath(url) {
+  return typeof url === 'string' &&
+
+  // only allow paths that start with uploads 
+  // must contain safe characters - letters, numbers, _ , -, .
+  // blocks javascript or other urls
+  // blocks directory traversal (../)
+  // blocks injected html / special characters 
+  // only allows pngs 
+  /^\/uploads\/[a-zA-Z0-9_\-\.]+\.png$/.test(url); 
+}
 // load users profile
 async function loadProfile() {
   try {
@@ -22,7 +35,8 @@ async function loadProfile() {
 
     // set profile picture, hide if none or fails to load
     const img = document.getElementById('profile_picture');
-    if (user.profile_picture) {
+    // user pfp must be safe 
+    if (user.profile_picture && isSafeImagePath(user.profile_picture)) {
       img.src = user.profile_picture;
 
     // prevents broken image display 
@@ -38,7 +52,7 @@ async function loadProfile() {
     document.getElementById('profile_username').textContent = user.username;
     document.getElementById('profile_email').textContent = user.email;
     document.getElementById('profile_joined').textContent = 'Joined: ' + new Date(user.created_at).toLocaleDateString(); // date profile joined, converted to correct timezone based on language settings
-    document.getElementById('profile_bio').textContent = user.bio || 'No bio yet';
+    document.getElementById('profile_bio').textContent = user.bio || 'No bio yet'; // allows sanitised input 
 
     // fetch posts - uses user id to query posts
     const postRes = await fetch(`/api/posts/user/${userId}`);
