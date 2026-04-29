@@ -14,51 +14,47 @@ import { type } from 'os';
 // validate pfp uploads
 const PNG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
-// file upload size limit 
+// file upload size limit
 const limits = {
-  png: 2 * 1024 * 1024 // 2MB upload 
-}
+  png: 2 * 1024 * 1024, // 2MB upload
+};
 
-// detects file type using magic bytes 
+// detects file type using magic bytes
 function detectFileType(buffer) {
-
-  // ensures input is valid buffer 
+  // ensures input is valid buffer
   if (!Buffer.isBuffer(buffer)) {
     return null;
   }
 
-  // check first 8 bytes of file against png signature 
-  const isPNG = 
-    buffer.length >= 8 &&
-    buffer.subarray(0, 8).equals(PNG); 
+  // check first 8 bytes of file against png signature
+  const isPNG = buffer.length >= 8 && buffer.subarray(0, 8).equals(PNG);
 
-    // return null if not png 
-  return isPNG ? 'png' : null; 
+  // return null if not png
+  return isPNG ? 'png' : null;
 }
 
-// va.idate upload 
+// va.idate upload
 function validateUpload(fileBuffer) {
-
-  // ensure input is binary data 
+  // ensure input is binary data
   if (!Buffer.isBuffer(fileBuffer)) {
-    return null; 
+    return null;
   }
 
-  // detect actual file type 
+  // detect actual file type
   const type = detectFileType(fileBuffer);
 
-  // reject if unsuported 
+  // reject if unsuported
   if (!type) {
     return null;
   }
 
-  // enforce size linmits - prevents DDoS attacks 
+  // enforce size linmits - prevents DDoS attacks
   if (fileBuffer.length > limits[type]) {
-    return null; 
+    return null;
   }
 
-  // return safe file type 
-  return type; 
+  // return safe file type
+  return type;
 }
 
 // hold the new password hash in memory until the email code is verified - avoids adding a DB column for a short-lived value
@@ -78,37 +74,12 @@ setInterval(
 export const getUsers = async (req, res) => {
   const users = await userQueries.findAll();
 
-  // bios as plain text 
+  // bios as plain text
   for (const user of users) {
-    user.bio = user.bio || ''; 
+    user.bio = user.bio || '';
   }
 
   res.json({ users });
-};
-
-// gets currently authenticated user 
-export const getMe = async (req, res) => {
-  try{ 
-    // ensures user is logged in 
-    if (!req.userId) {
-        return res.status(401).json({error: 'Not logged in'});
-     }
-
-    // fetches user from database
-    const user = await userQueries.findById(req.userId); 
-
-    // plain text bios 
-    if (user) {
-      user.bio = user.bio || ''
-    }
-
-    res.json({ user }); 
-
-      // profile couldn't be fetched 
-    } catch (err) {
-      console.error('Get my profile error', err);
-      res.status(500).json({ error: 'Server error '});
-  }
 };
 
 // get user by their profile ID
@@ -119,7 +90,7 @@ export const getUserById = async (req, res) => {
 
   if (!user) return res.status(404).json({ error: 'User not found' });
 
-    user.bio = user.bio || ''; 
+  user.bio = user.bio || '';
 
   res.json({ user });
 };
@@ -132,7 +103,7 @@ export const updateBio = async (req, res) => {
     return res.status(400).json({ error: 'Invalid bio type' });
   }
 
-  bio = bio.trim();   
+  bio = bio.trim();
 
   // update bio of currently logged in user - only currently logged in user can do this to their own bio
   // uses an array - bio = $1, userId = $2
@@ -214,7 +185,7 @@ export const updateProfilePicture = async (req, res) => {
     const type = validateUpload(fileBuffer);
 
     if (!type) {
-      return res.status(400).json({ error: 'Invalid image upload' }); 
+      return res.status(400).json({ error: 'Invalid image upload' });
     }
 
     // only allow PNG explicitly
@@ -225,7 +196,7 @@ export const updateProfilePicture = async (req, res) => {
     const max_size = 2 * 1024 * 1024;
 
     if (fileBuffer.length > max_size) {
-      return res.status(400).json({error: 'File too large' }); 
+      return res.status(400).json({ error: 'File too large' });
     }
 
     // generated filename, not user-controlled

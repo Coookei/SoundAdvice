@@ -1,25 +1,24 @@
 // profile page logic
 
-// safe image path 
-// prevents xss via malicious urls 
+// safe image path
+// prevents xss via malicious urls
 function isSafeImagePath(url) {
-  return typeof url === 'string' &&
-
-  // only allow paths that start with uploads 
-  // must contain safe characters - letters, numbers, _ , -, .
-  // blocks javascript or other urls
-  // blocks directory traversal (../)
-  // blocks injected html / special characters 
-  // only allows pngs 
-  /^\/uploads\/[a-zA-Z0-9_\-\.]+\.png$/.test(url); 
+  return (
+    typeof url === 'string' &&
+    // only allow paths that start with uploads
+    // must contain safe characters - letters, numbers, _ , -, .
+    // blocks javascript or other urls
+    // blocks directory traversal (../)
+    // blocks injected html / special characters
+    // only allows pngs
+    /^\/uploads\/[a-zA-Z0-9_\-\.]+\.png$/.test(url)
+  );
 }
 // load users profile
 async function loadProfile() {
   try {
     // get currently logged in user from session
-    const meRes = await fetch('/api/users/me', {
-        credentials: 'include' // ensures cookie is sent 
-    }); 
+    const meRes = await fetch('/api/auth/me');
 
     const meData = await meRes.json();
 
@@ -35,15 +34,14 @@ async function loadProfile() {
 
     // set profile picture, hide if none or fails to load
     const img = document.getElementById('profile_picture');
-    // user pfp must be safe 
+    // user pfp must be safe
     if (user.profile_picture && isSafeImagePath(user.profile_picture)) {
       img.src = user.profile_picture;
 
-    // prevents broken image display 
+      // prevents broken image display
       img.onerror = () => {
         img.style.display = 'none';
       };
-
     } else {
       img.style.display = 'none';
     }
@@ -52,7 +50,7 @@ async function loadProfile() {
     document.getElementById('profile_username').textContent = user.username;
     document.getElementById('profile_email').textContent = user.email;
     document.getElementById('profile_joined').textContent = 'Joined: ' + new Date(user.created_at).toLocaleDateString(); // date profile joined, converted to correct timezone based on language settings
-    document.getElementById('profile_bio').textContent = user.bio || 'No bio yet'; // allows sanitised input 
+    document.getElementById('profile_bio').textContent = user.bio || 'No bio yet'; // allows sanitised input
 
     // fetch posts - uses user id to query posts
     const postRes = await fetch(`/api/posts/user/${userId}`);
@@ -73,9 +71,9 @@ function renderPosts(posts) {
 
   // message if no posts yet
   if (posts.length == 0) {
-    const empty = document.createElement('p'); 
+    const empty = document.createElement('p');
     empty.textContent = 'No posts yet';
-    container.appendChild(empty); 
+    container.appendChild(empty);
   }
 
   // loop through each post + create elements dynamically
@@ -108,7 +106,7 @@ function renderPosts(posts) {
 }
 
 // initialise profile
-loadProfile(); 
+loadProfile();
 
 // profile actions - upload profile pic
 document.getElementById('upload_pfp_btn').addEventListener('click', async () => {
@@ -122,11 +120,11 @@ document.getElementById('upload_pfp_btn').addEventListener('click', async () => 
   const formData = new FormData();
   formData.append('pfp', file);
 
-    // send file to backend endpoint
-    const res = await csrfFetch('/api/users/upload-pfp', {
-        method: 'POST',
-        body: formData
-    });
+  // send file to backend endpoint
+  const res = await csrfFetch('/api/users/upload-pfp', {
+    method: 'POST',
+    body: formData,
+  });
 
   // reload page if upload reflects profile picture
   if (res.ok) {
@@ -142,12 +140,12 @@ document.getElementById('save_bio_btn').addEventListener('click', async () => {
 
   if (!bio) return alert('Enter a bio');
 
-    // send updated bio as json 
-    const res = await csrfFetch('/api/users/bio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bio })
-    });
+  // send updated bio as json
+  const res = await csrfFetch('/api/users/bio', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ bio }),
+  });
 
   // reload page if bio upload successful
   if (res.ok) location.reload();
@@ -161,18 +159,18 @@ document.getElementById('request_password_btn').addEventListener('click', async 
 
   if (!currentPassword || !newPassword) return alert('Enter both current and new passwords');
 
-    // request verification code from server 
-    const res = await csrfFetch('/api/users/password/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword, newPassword })
-    });
+  // request verification code from server
+  const res = await csrfFetch('/api/users/password/request', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
 
   const data = await res.json();
 
   if (res.ok) {
     alert('Code sent to your email.');
-    // show input field for verification code 
+    // show input field for verification code
     document.getElementById('password_code_row').style.display = 'flex';
   } else {
     alert(data.error || 'Failed to send code');
@@ -183,18 +181,18 @@ document.getElementById('request_password_btn').addEventListener('click', async 
 document.getElementById('confirm_password_btn').addEventListener('click', async () => {
   const code = document.getElementById('password_code').value;
 
-    // send verification code to confirm password change 
-    const res = await csrfFetch('/api/users/password/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code })
-    });
+  // send verification code to confirm password change
+  const res = await csrfFetch('/api/users/password/confirm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
 
   const data = await res.json();
 
   if (res.ok) {
     alert('Password updated. Other devices have been logged out.');
-    // reload - new session 
+    // reload - new session
     location.reload();
   } else {
     alert(data.error || 'Failed to update password');
