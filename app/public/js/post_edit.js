@@ -36,7 +36,7 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
-  const res = await fetch('/api/posts/' + postId, {
+  const res = await csrfFetch('/api/posts/' + postId, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title, content }),

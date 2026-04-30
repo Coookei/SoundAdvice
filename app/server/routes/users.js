@@ -19,8 +19,8 @@ router.get('/:id', requireAdmin, getUserById); // not currently used
 
 router.post(
   '/bio',
-  requireAuth,
   csrfProtection,
+  requireAuth,
   rateLimit({ max: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
   updateBio
 ); // update own bio
@@ -28,15 +28,15 @@ router.post(
 // password change is two-step: request code (rate limited, prevents email spam), then confirm
 router.post(
   '/password/request',
-  requireAuth,
   csrfProtection,
+  requireAuth,
   rateLimit({ max: 5, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
   requestPasswordChange
 );
 router.post(
   '/password/confirm',
-  requireAuth,
   csrfProtection,
+  requireAuth,
   rateLimit({ max: 5, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
   confirmPasswordChange
 );
@@ -44,8 +44,8 @@ router.post(
 // 10 uploads per 10 mins to prevent disk spam
 router.post(
   '/upload-pfp',
-  requireAuth,
   csrfProtection,
+  requireAuth,
   rateLimit({ max: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
   updateProfilePicture
 );

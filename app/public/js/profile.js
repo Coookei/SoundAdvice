@@ -1,5 +1,3 @@
-// profile page logic
-
 // load users profile
 async function loadProfile() {
   try {
@@ -177,7 +175,6 @@ document.getElementById('confirm_password_btn').addEventListener('click', async 
 
   if (res.ok) {
     alert('Password updated. Other devices have been logged out.');
-    // reload - new session
     location.reload();
   } else {
     alert(data.error || 'Failed to update password');

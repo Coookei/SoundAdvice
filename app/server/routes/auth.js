@@ -12,6 +12,7 @@ import {
 } from '../controllers/auth.js';
 import { rateLimit } from '../middleware/rate_limit.js';
 import { requireGuest, requirePending, requireSession } from '../middleware/auth.api.js';
+import { csrfProtection } from '../middleware/csrf.js';
 
 const router = Router();
 
@@ -36,7 +37,6 @@ router.post(
   verify2fa
 );
 
-router.post('/logout', requireSession, logout);
 router.get('/me', me); // return user if logged in otherwise null, so no auth required
 
 // forgot-password flow. request is tighter than verify/reset because it triggers emails
@@ -58,5 +58,7 @@ router.post(
   rateLimit({ max: 5, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
   forgotReset
 );
+
+router.post('/logout', csrfProtection, requireSession, logout); // this is only auth route that needs csrf protection
 
 export default router;

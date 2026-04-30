@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+  <body>
+    <button id="me">Request /api/auth/me</button>
+    <button id="bio">POST /api/users/bio</button>
+
+    <p id="output"></p>
+
+    <script>
+      const TARGET = 'http://localhost:3000';
+      const out = document.getElementById('output');
+
+      function log(message) {
+        out.textContent += message + '\n';
+      }
+
+      document.getElementById('me').addEventListener('click', async () => {
+        out.textContent = '';
+
+        try {
+          const res = await fetch(TARGET + '/api/auth/me', {
+            credentials: 'include',
+          });
+
+          log('status: ' + res.status);
+          log(await res.text());
+        } catch (err) {
+          log('blocked from reading /api/auth/me');
+          log(err);
+        }
+      });
+
+      document.getElementById('bio').addEventListener('click', async () => {
+        out.textContent = '';
+
+        try {
+          const res = await fetch(TARGET + '/api/users/bio', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': 'invalid-token',
+            },
+            body: JSON.stringify({
+              bio: 'CSRF test bio',
+            }),
+          });
+
+          log('status: ' + res.status);
+          log(await res.text());
+        } catch (err) {
+          log('blocked or failed sending /api/users/bio');
+          log(err);
+        }
+      });
+    </script>
+  </body>
+</html>

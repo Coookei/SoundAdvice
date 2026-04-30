@@ -14,6 +14,7 @@ import {
 import { getComments, createComment, deleteComment } from '../controllers/comments.js';
 import { requireAdmin, requireAuth } from '../middleware/auth.api.js';
 import { rateLimit } from '../middleware/rate_limit.js';
+import { csrfProtection } from '../middleware/csrf.js';
 
 const router = Router();
 
@@ -24,15 +25,28 @@ router.get('/search', searchPosts); // search approved posts with a query
 router.get('/my', requireAuth, getMyPosts); // all posts of any status for current authd user
 router.get('/user/:userId', getPostByUser); // approved posts for a given user (profile page)
 // can create 10 posts every 10 mins to prevent spam
-router.post('/', requireAuth, rateLimit({ max: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }), createPost); // authd users can create posts
+router.post(
+  '/',
+  csrfProtection,
+  requireAuth,
+  rateLimit({ max: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
+  createPost
+); // authd users can create posts
 router.get('/admin', requireAdmin, getAdminPosts); // admin only to get ALL posts of any status for admin panel
-router.patch('/:id/status', requireAdmin, updatePostStatus); // admin only to approve/reject posts
+router.patch('/:id/status', csrfProtection, requireAdmin, updatePostStatus); // admin only to approve/reject posts
 router.get('/:id', getPostById); // get single post, approved posts are public, unapproved only visible to author or admin
 // can update posts 20 times every 10 mins to allow bulk changes but prevent abuse
-router.put('/:id', requireAuth, rateLimit({ max: 20, windowMs: 10 * 60 * 1000, blockMs: 10 * 60 * 1000 }), updatePost); // authd users can update their own posts, admin can update any post
+router.put(
+  '/:id',
+  csrfProtection,
+  requireAuth,
+  rateLimit({ max: 20, windowMs: 10 * 60 * 1000, blockMs: 10 * 60 * 1000 }),
+  updatePost
+); // authd users can update their own posts, admin can update any post
 // can delete posts 20 times every 10 mins to allow bulk deletes but prevent abuse
 router.delete(
   '/:id',
+  csrfProtection,
   requireAuth,
   rateLimit({ max: 20, windowMs: 10 * 60 * 1000, blockMs: 10 * 60 * 1000 }),
   deletePost
@@ -42,6 +56,7 @@ router.get('/:id/comments', getComments); // get all comments for a post, approv
 // can create 15 comments every 10 mins
 router.post(
   '/:id/comments',
+  csrfProtection,
   requireAuth,
   rateLimit({ max: 15, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
   createComment
@@ -50,6 +65,7 @@ router.post(
 // can delete 20 comments every 10 mins
 router.delete(
   '/:id/comments/:commentId',
+  csrfProtection,
   requireAuth,
   rateLimit({ max: 20, windowMs: 10 * 60 * 1000, blockMs: 10 * 60 * 1000 }),
   deleteComment
