@@ -36,7 +36,7 @@ async function loadPosts() {
       approveButton.textContent = 'Approve';
       approveButton.classList.add('link_btn');
       approveButton.addEventListener('click', async () => {
-        const res = await fetch('/api/posts/' + post.id + '/status', {
+        const res = await csrfFetch('/api/posts/' + post.id + '/status', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'approved' }),
@@ -58,7 +58,7 @@ async function loadPosts() {
       rejectButton.textContent = 'Reject';
       rejectButton.classList.add('link_btn');
       rejectButton.addEventListener('click', async () => {
-        const res = await fetch('/api/posts/' + post.id + '/status', {
+        const res = await csrfFetch('/api/posts/' + post.id + '/status', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'rejected' }),

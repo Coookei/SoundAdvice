@@ -49,7 +49,7 @@ async function loadPosts() {
       const existing = document.getElementById('post_error');
       if (existing) existing.remove();
 
-      const res = await fetch('/api/posts/' + post.id, { method: 'DELETE' });
+      const res = await csrfFetch('/api/posts/' + post.id, { method: 'DELETE' });
       const data = await res.json();
 
       if (res.ok) {

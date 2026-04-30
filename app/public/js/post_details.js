@@ -51,7 +51,7 @@ async function loadPost() {
     const existing = document.getElementById('post_error');
     if (existing) existing.remove();
 
-    const deleteRes = await fetch('/api/posts/' + post.id, { method: 'DELETE' });
+    const deleteRes = await csrfFetch('/api/posts/' + post.id, { method: 'DELETE' });
     const data = await deleteRes.json();
 
     if (deleteRes.ok) {
@@ -87,7 +87,7 @@ async function loadPost() {
     }
 
     // send request to api
-    const commentRes = await fetch('/api/posts/' + postId + '/comments', {
+    const commentRes = await csrfFetch('/api/posts/' + postId + '/comments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content }),
@@ -145,7 +145,7 @@ async function loadComments() {
 
       // connect delete button to a listener to send the actual delete requests
       delBtn.addEventListener('click', async () => {
-        const delRes = await fetch('/api/posts/' + postId + '/comments/' + comment.id, {
+        const delRes = await csrfFetch('/api/posts/' + postId + '/comments/' + comment.id, {
           method: 'DELETE',
         });
 
