@@ -1,60 +1,35 @@
 import crypto from 'crypto';
 
-// parse cookies manually, from header into request cookies
-export function parseCookies(req, _res, next) {
-  req.cookies = {};
+// this file implements CSRF token checks using a token derived from the users session id
 
-  const header = req.headers.cookie;
+// the client gets the token from the server /auth/me endpoint on page load (so no readable cookie is needed on the client)
+// our express server does not set CORS headers, so browsers block cross origin scripts from reading the response, so the token stays unreadable to other sites
 
-  // no cookies
-  if (!header) {
-    return next();
-  }
+// the client sends the token back in the x-csrf-token header on state changing requests, like POST requests.
 
-  // split cookie string + extract key value pairs
-  header.split(';').forEach((cookie) => {
-    try {
-      const [name, ...rest] = cookie.trim().split('=');
-      req.cookies[name] = decodeURIComponent(rest.join('='));
-    } catch (err) {
-      // skip malformed cookies
-    }
-  });
-
-  next();
+export function generateCSRFToken(sid) {
+  if (!sid) return null;
+  // the CSRF token is obtained from hmac(sid, CSRF_SECRET), so the token is unique per session and expires when the session expires
+  // additioanlly the csrf token cannot be easily forged as we are using a server side secret
+  return crypto.createHmac('sha256', process.env.CSRF_SECRET).update(sid).digest('hex');
 }
 
-// attach csrf token cookie if one doesn't already exist
-export function attachCSRFCookie(req, res, next) {
-  if (!req.cookies?.csrf_token) {
-    // generates secure token
-    const token = crypto.randomBytes(32).toString('hex');
-
-    // sends token as cookie
-    res.cookie('csrf_token', token, {
-      httpOnly: false, // HttpOnly=False ALLOWS javascript on page to read the cookie, needed for client to read and send in header
-      secure: process.env.NODE_ENV === 'production', // Use Secure cookies in production to ensure the cookie is only sent over HTTPS
-      sameSite: 'strict', // prevents cookie from being sent in any cross-site requests, strongest CSRF protection
-      path: '/', // cookie available across whole site on all routes
-    });
-  }
-  next();
-}
-
-// csrf protection
 export function csrfProtection(req, res, next) {
-  // only protect unsafe methods
-  const unsafe = ['POST', 'PUT', 'DELETE', 'PATCH'];
+  // this middleware is applied to all state changing API routes to ensure that the user
+  // meant to initate the action by checking that a valid CSRF token is included in the request header
+  // a cross origin script cannot read /auth/me response (no CORS headers allowed and CORP set to same-origin), so cannot obtain the token, as modern browsers enforce these policies
 
+  // only protect unsafe API methods
+  const unsafe = ['POST', 'PUT', 'DELETE', 'PATCH'];
   if (!unsafe.includes(req.method)) {
-    return next();
+    return next(); // allow other methods, eg GET requests
   }
 
-  // check request origin matches server host
+  // check the request origin as an additional csrf defence
+  // alongside the SameSite=Strict session cookie and CSRF token check we do below
   const origin = req.headers.origin;
   const host = req.headers.host;
 
-  // no origin
   if (!origin) {
     return res.status(403).json({ error: 'Missing origin' });
   }
@@ -68,25 +43,28 @@ export function csrfProtection(req, res, next) {
     return res.status(403).json({ error: 'Invalid origin' });
   }
 
-  // double submit cookie check
-  // client must send CSRF token in both cookie and header
-  const cookieToken = req.cookies?.csrf_token;
-  const headerToken = req.headers['x-csrf-token'];
-
-  // tokens don't match
-  if (!cookieToken || !headerToken) {
-    return res.status(403).json({ error: 'Invalid CSRF token' });
+  // must have a session to verify the token against
+  if (!req.sid) {
+    return res.status(403).json({ error: 'No session' });
   }
 
-  // convert hex to buffers, safe comparison
-  const cookieBuff = Buffer.from(cookieToken, 'hex');
-  const headerBuff = Buffer.from(headerToken, 'hex');
+  // client must send token derived from their sid in the header
+  const expected = generateCSRFToken(req.sid);
+  const submitted = req.headers['x-csrf-token'];
+
+  // no token submitted
+  if (!submitted) {
+    return res.status(403).json({ error: 'Missing CSRF token' });
+  }
+
+  // convert hex to buffers to enable a safe timingcomparison
+  const expectedBuff = Buffer.from(expected, 'hex');
+  const submittedBuff = Buffer.from(submitted, 'hex');
 
   // timinig safe comparison, prevents timing attacks
-  if (cookieBuff.length !== headerBuff.length || !crypto.timingSafeEqual(cookieBuff, headerBuff)) {
+  if (expectedBuff.length !== submittedBuff.length || !crypto.timingSafeEqual(expectedBuff, submittedBuff)) {
     return res.status(403).json({ error: 'Invalid CSRF token' });
   }
 
-  // valid token so allow new request
-  next();
+  next(); // valid token so allow this request
 }
