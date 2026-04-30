@@ -89,10 +89,10 @@ function filterPosts() {
     const contentText = content.textContent.toLowerCase();
 
     if (titleText.includes(filter) || contentText.includes(filter)) {
-      posts[i].style.display = ''; // allow display
+      posts[i].classList.remove('hidden'); // allow display
     } else {
-      // if not match then add display none to hide
-      posts[i].style.display = 'none';
+      // if not match then hide
+      posts[i].classList.add('hidden');
     }
   }
 }

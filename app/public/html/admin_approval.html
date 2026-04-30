@@ -13,12 +13,12 @@
     <header>
       <a href="/"><img id="logo" src="/images/logo.png" /></a>
       <h1>Admin Dashboard</h1>
-      <a id="login_btn" href="/sign-in" style="display: none">Log in</a>
-      <div class="dropdown" id="user_dropdown" style="display: none">
+      <a id="login_btn" class="hidden" href="/sign-in">Log in</a>
+      <div class="dropdown hidden" id="user_dropdown">
         <button id="login_link">Username <i class="fa fa-caret-down"></i></button>
         <div class="dropdown-content">
           <a href="/profile">Profile</a>
-          <a href="/admin/approval" id="admin_panel_link" style="display: none">Admin Panel</a>
+          <a class="hidden" href="/admin/approval" id="admin_panel_link">Admin Panel</a>
           <a id="logout_btn">Log out</a>
         </div>
       </div>

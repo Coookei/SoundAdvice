@@ -16,19 +16,19 @@ async function displayUsernameDropdown() {
   // user not logged in, show login button instead of dropdown
   if (!user) {
     // show login button if not logged in
-    document.getElementById('login_btn').style.display = '';
+    document.getElementById('login_btn').classList.remove('hidden');
     return;
   }
 
   // show username and dropdown if logged in
-  document.getElementById('user_dropdown').style.display = '';
+  document.getElementById('user_dropdown').classList.remove('hidden');
   // update UI with username
   document.getElementById('login_link').childNodes[0].textContent = user.username + ' ';
 
   // if user has admin privileges - show admin panel link
   if (user.is_admin) {
     // only show admin panel link if user is admin
-    document.getElementById('admin_panel_link').style.display = '';
+    document.getElementById('admin_panel_link').classList.remove('hidden');
   }
 }
 
