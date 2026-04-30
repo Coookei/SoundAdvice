@@ -12,6 +12,7 @@ db/          # SQL migration files
 logs/        # logs such as for auth, posting and comment events
 test/        # unit tests, mirroring the app/ folder structure
 uploads/     # user profile pictures
+attacker-app/# verify CSRF and cross-origin protections
 ```
 
 ## Setup
