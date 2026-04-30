@@ -4,6 +4,7 @@ import { generateCaptcha, verifyCaptcha } from '../lib/captcha.js';
 import { hashCode } from '../lib/crypto.js';
 import { sendEmail } from '../lib/email.js';
 import { logAuthEvent } from '../lib/log.js';
+import { generateCSRFToken } from '../middleware/csrf.js';
 import { createSession, destroySession, regenerateSession } from '../middleware/session.js';
 import * as authQueries from '../queries/auth.js';
 import * as sessionQueries from '../queries/sessions.js';
@@ -150,11 +151,16 @@ export const logout = async (req, res) => {
 
 export const me = async (req, res) => {
   if (!req.userId) {
-    return res.json({ user: null });
+    return res.json({ user: null, csrfToken: null });
   }
 
   const user = await userQueries.findById(req.userId);
-  res.json({ user: user || null });
+
+  // explicitly mark response as same origin, so cross origin scripts cannot read the response, this keeps the csrf token only readable by a user using our website directly
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+
+  // csrf token is derived from the sid so it invalidates whenever the session expires
+  res.json({ user: user || null, csrfToken: generateCSRFToken(req.sid) });
 };
 
 // forgot password step 1: email a code if the account exists, but always respond the same

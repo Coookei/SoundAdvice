@@ -1,9 +1,18 @@
-async function displayUsernameDropdown() {
-  // fetch currently authenticated user
-  const res = await fetch('/api/auth/me');
-  const { user } = await res.json();
+let csrfToken = null; // stores the CSRF token obtained from the server
 
-  // no user returned
+const authReady = loadAuthState(); // fetch current user immediately
+
+async function loadAuthState() {
+  // fetches currently authenticated user and csrf token
+  const res = await fetch('/api/auth/me');
+  const { user, csrfToken: token } = await res.json();
+  csrfToken = token;
+  return user;
+}
+
+async function displayUsernameDropdown() {
+  const user = await authReady;
+
   // user not logged in, show login button instead of dropdown
   if (!user) {
     // show login button if not logged in
@@ -37,21 +46,15 @@ document.querySelector('#logout_btn')?.addEventListener('click', async (e) => {
   window.location.href = data.redirect || '/sign-in';
 });
 
-// helper function to include CSRF token in fetch requests
-// it extracts the token from cookie and adds it as a header to the request
-function csrfFetch(url, options = {}) {
-  // extract csrf token from browser cookies
-  const token = document.cookie
-    .split('; ') // split into individual cookies
-    .find((c) => c.startsWith('csrf_token=')) // find csrf token cookie
-    ?.split('=')[1]; // extract the value after the '='
+async function csrfFetch(url, options = {}) {
+  // helper to include the CSRF token in fetch requests as a header
+  await authReady; // make sure token loaded
 
   return fetch(url, {
     ...options, // include any options passed in
-    credentials: 'include', // ensures cookies are sent with request, works without as same origin
     headers: {
-      ...options.headers, // preserves any existing headers
-      'x-csrf-token': token, // attach csrf token as custom header - to be compared to csrf_token cookie
+      ...options.headers, // keep any existing headers
+      'x-csrf-token': csrfToken, // attach csrf token as custom header, server will verify this
     },
   });
 }
