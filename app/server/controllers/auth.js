@@ -203,7 +203,9 @@ export const forgotRequest = async (req, res) => {
     const code = crypto.randomInt(100000, 999999).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
     await authQueries.setEmailCode(user.id, hashCode(code), expiresAt);
-    await sendEmail(email, 'SoundAdvice password reset code', `Your code is: ${code}. It expires in 10 minutes.`);
+
+    // DO NOT await the email, as otherwise the delay could be used to enumerate accounts
+    sendEmail(email, 'SoundAdvice password reset code', `Your code is: ${code}. It expires in 10 minutes.`);
     await logAuthEvent('forgot_requested', { userId: user.id, ip: req.ip });
   } else {
     await logAuthEvent('forgot_unknown_email', { ip: req.ip });
