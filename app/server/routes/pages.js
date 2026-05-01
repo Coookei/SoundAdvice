@@ -20,6 +20,10 @@ router.get('/sign-in/2fa', redirectIfNotPending, (_req, res) => res.sendFile(htm
 router.get('/forgot-password', redirectIfAuthed, (_req, res) => res.sendFile(html('forgot_password.html')));
 router.get('/forgot-password/code', redirectIfAuthed, (_req, res) => res.sendFile(html('forgot_password_code.html')));
 router.get('/forgot-password/reset', redirectIfAuthed, (_req, res) => res.sendFile(html('forgot_password_reset.html')));
+router.get('/sign-in/magic-link', redirectIfAuthed, (_req, res) => res.sendFile(html('magic_link.html')));
+router.get('/sign-in/magic-link/confirm', redirectIfAuthed, (_req, res) =>
+  res.sendFile(html('magic_link_confirm.html'))
+);
 router.get('/my-posts', redirectIfGuest, (_req, res) => res.sendFile(html('my_posts.html'))); //protected
 router.get('/profile', redirectIfGuest, (_req, res) => res.sendFile(html('profile.html'))); // protected
 router.get('/post/new', redirectIfGuest, (_req, res) => res.sendFile(html('post_new.html'))); // protected
