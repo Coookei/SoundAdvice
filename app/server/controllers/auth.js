@@ -141,7 +141,7 @@ export const verify2fa = async (req, res) => {
   const submittedHash = hashCode(code);
   const submittedBuffer = Buffer.from(submittedHash, 'hex');
   const storedBuffer = Buffer.from(user.email_code, 'hex');
-  const match = crypto.timingSafeEqual(submittedBuffer, storedBuffer);
+  const match = submittedBuffer.length === storedBuffer.length && crypto.timingSafeEqual(submittedBuffer, storedBuffer);
 
   if (!match) {
     const row = await sessionQueries.increment2faAttempts(req.pendingUserId);
