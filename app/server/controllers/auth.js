@@ -27,22 +27,22 @@ export const getCaptcha = (_req, res) => {
 };
 
 export const register = async (req, res) => {
-  const { captchaToken, captchaAnswer } = req.body;
-
   // apply server side validation
   const check = validate(() => ({
     username: requireUsername(req.body.username),
     email: requireEmail(req.body.email),
     password: requirePassword(req.body.password),
+    captchaToken: requireString(req.body.captchaToken, 'Captcha token', { min: 1, max: 100, trim: true }),
+    captchaAnswer: requireString(req.body.captchaAnswer, 'Captcha answer', { min: 1, max: 20, trim: true }),
   }));
   if (!check.ok) {
     // if any data is malformed, give error message back to user
     return res.status(400).json({ error: check.error });
   }
 
-  const { username, email, password } = check.value; // we have cleaned and validated input here
+  const { username, email, password, captchaToken, captchaAnswer } = check.value; // we have cleaned and validated input here
 
-  if (!verifyCaptcha(captchaToken, captchaAnswer || '')) {
+  if (!verifyCaptcha(captchaToken, captchaAnswer)) {
     await logAuthEvent('register_captcha_fail', { ip: req.ip });
     return res.status(400).json({ error: 'Incorrect captcha, try again' });
   }
