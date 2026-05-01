@@ -275,3 +275,76 @@ export const forgotReset = async (req, res) => {
 
   res.json({ message: 'Password updated', redirect: '/sign-in' });
 };
+
+// magic link step 1: email a code if account exists, but always give same response to prevent account enumeration
+export const magicLinkRequest = async (req, res) => {
+  const check = validate(() => requireEmail(req.body.email));
+  if (!check.ok) {
+    return res.json({ message: 'If that account exists, a sign-in link has been sent.' });
+  }
+
+  const email = check.value;
+
+  const user = await authQueries.findByEmail(email);
+
+  if (user?.is_admin) {
+    // admins are not allowed to use magic link logic as it prevents a 2FA based flow where a password and email code are required.
+
+    // DO NOT await the email, as otherwise the delay could be used to enumerate accounts
+    sendEmail(
+      email,
+      'SoundAdvice sign-in method unavailable',
+      `This account cannot use magic-link sign in. Please sign in with your password and 2FA verification code instead.`
+    );
+    await logAuthEvent('magic_link_admin_blocked', { userId: user.id, ip: req.ip });
+  } else if (user) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = hashCode(token);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await authQueries.setMagicLinkToken(user.id, tokenHash, expiresAt);
+
+    // do not generate login link using the req object as could be manipualted, instead we use a BASE_URL env variable
+    const link = `${process.env.BASE_URL}/sign-in/magic-link/confirm?token=${token}`;
+
+    // DO NOT await the email, as otherwise the delay could be used to enumerate accounts
+    sendEmail(email, 'Your SoundAdvice sign-in link', `Click to sign in: ${link}\n\nThis link expires in 10 minutes.`);
+    await logAuthEvent('magic_link_request', { userId: user.id, ip: req.ip });
+  } else {
+    await logAuthEvent('magic_link_unknown_email', { ip: req.ip });
+  }
+
+  res.json({ message: 'If that account exists, a sign-in link has been sent.' });
+};
+
+// step 2: user clicks link in email which takes them to a confirm page. They click confirm
+// which POSTS the token here. If token valid we create session for them.
+// admins cannot use magic logic since admins must use the 2FA route of password + email code
+export const magicLinkVerify = async (req, res) => {
+  // token made with crypto.randomBytes(32).toString('hex') which means is always 64 hex chars
+  const check = validate(() => requireString(req.body.token, 'Token', { min: 64, max: 64 }));
+  if (!check.ok) {
+    return res.status(400).json({ error: 'Invalid or expired link' });
+  }
+
+  const token = check.value;
+  const tokenHash = hashCode(token);
+
+  // this will find and clear matching valid token. If expired will not return anything, so no need to check token expiry here.
+  const user = await authQueries.consumeMagicLinkToken(tokenHash);
+  if (!user) {
+    // no matching token, or token expired
+    return res.status(400).json({ error: 'Invalid or expired link' });
+  }
+
+  if (user.is_admin) {
+    // admin should never have a magic link token set, as they are not allowed to use this single factor login method
+    // but just as backup, BLOCK admins just in case
+    await logAuthEvent('magic_link_admin_verify_blocked', { userId: user.id, ip: req.ip });
+    return res.status(400).json({ error: 'Invalid or expired link' });
+  }
+
+  await createSession(res, user.id, false, false);
+  await logAuthEvent('magic_link_login', { userId: user.id, ip: req.ip });
+
+  res.json({ message: 'Signed in', redirect: '/' });
+};

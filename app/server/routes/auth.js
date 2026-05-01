@@ -9,6 +9,8 @@ import {
   forgotRequest,
   forgotVerify,
   forgotReset,
+  magicLinkRequest,
+  magicLinkVerify,
 } from '../controllers/auth.js';
 import { rateLimit } from '../middleware/rate_limit.js';
 import { requireGuest, requirePending, requireSession } from '../middleware/auth.api.js';
@@ -73,6 +75,22 @@ router.post(
   requireGuest,
   rateLimit({ max: 5, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
   forgotReset
+);
+
+// magic link flow. request is tighter than verify because it triggers emails
+router.post(
+  '/magic-link/request',
+  requireSameOrigin,
+  requireGuest,
+  rateLimit({ max: 3, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
+  magicLinkRequest
+);
+router.post(
+  '/magic-link/verify',
+  requireSameOrigin,
+  requireGuest,
+  rateLimit({ max: 6, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
+  magicLinkVerify
 );
 
 export default router;
