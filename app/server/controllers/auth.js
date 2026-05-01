@@ -9,6 +9,14 @@ import { createSession, destroySession, regenerateSession } from '../middleware/
 import * as authQueries from '../queries/auth.js';
 import * as sessionQueries from '../queries/sessions.js';
 import * as userQueries from '../queries/users.js';
+import {
+  validate,
+  requireEmail,
+  requirePassword,
+  requireUsername,
+  requireDigitCode,
+  requireString,
+} from '../lib/validate.js';
 
 // pre computed hash so we can run bcrypt.compare even when user doesn't exist - prevents timing-based account enumeration
 const FAKE_HASH = await bcrypt.hash('fake-password-for-timing', 12);
@@ -19,11 +27,20 @@ export const getCaptcha = (_req, res) => {
 };
 
 export const register = async (req, res) => {
-  const { username, email, password, captchaToken, captchaAnswer } = req.body;
+  const { captchaToken, captchaAnswer } = req.body;
 
-  if (!username || !email || !password) {
-    return res.status(400).json({ error: 'All fields are required' });
+  // apply server side validation
+  const check = validate(() => ({
+    username: requireUsername(req.body.username),
+    email: requireEmail(req.body.email),
+    password: requirePassword(req.body.password),
+  }));
+  if (!check.ok) {
+    // if any data is malformed, give error message back to user
+    return res.status(400).json({ error: check.error });
   }
+
+  const { username, email, password } = check.value; // we have cleaned and validated input here
 
   if (!verifyCaptcha(captchaToken, captchaAnswer || '')) {
     await logAuthEvent('register_captcha_fail', { ip: req.ip });
@@ -51,11 +68,16 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+  const check = validate(() => ({
+    email: requireEmail(req.body.email),
+    password: requirePassword(req.body.password),
+  }));
+  if (!check.ok) {
+    // single generic message to avoid leaking which field was malformed
+    return res.status(400).json({ error: 'Invalid email or password' });
   }
+
+  const { email, password } = check.value;
 
   const user = await authQueries.findByEmail(email);
 
@@ -93,11 +115,12 @@ export const login = async (req, res) => {
 };
 
 export const verify2fa = async (req, res) => {
-  const { code } = req.body;
-
-  if (!code) {
-    return res.status(400).json({ error: 'Code is required' });
+  const check = validate(() => requireDigitCode(req.body.code, 6));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
   }
+
+  const code = check.value;
 
   const user = await authQueries.getEmailCode(req.pendingUserId);
 
@@ -115,7 +138,7 @@ export const verify2fa = async (req, res) => {
   }
 
   // timing safe comparison of HMAC hashes
-  const submittedHash = hashCode(code.toString());
+  const submittedHash = hashCode(code);
   const submittedBuffer = Buffer.from(submittedHash, 'hex');
   const storedBuffer = Buffer.from(user.email_code, 'hex');
   const match = crypto.timingSafeEqual(submittedBuffer, storedBuffer);
@@ -166,11 +189,13 @@ export const me = async (req, res) => {
 // forgot password step 1: email a code if the account exists, but always respond the same
 // way (prevents account enumeration via the reset form)
 export const forgotRequest = async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
+  const check = validate(() => requireEmail(req.body.email));
+  if (!check.ok) {
+    // always respond the same way regardless of failure to avoid account enumeration
+    return res.json({ message: 'If that email is registered, a code has been sent.' });
   }
+
+  const email = check.value;
 
   const user = await authQueries.findByEmail(email);
 
@@ -190,11 +215,15 @@ export const forgotRequest = async (req, res) => {
 // step 2: verify the code and issue a short-lived reset token. this token proves the user
 // passed the email check, so the reset endpoint can trust them without another session
 export const forgotVerify = async (req, res) => {
-  const { email, code } = req.body;
-
-  if (!email || !code) {
-    return res.status(400).json({ error: 'Email and code are required' });
+  const check = validate(() => ({
+    email: requireEmail(req.body.email),
+    code: requireDigitCode(req.body.code, 6),
+  }));
+  if (!check.ok) {
+    return res.status(400).json({ error: 'Invalid or expired code' });
   }
+
+  const { email, code } = check.value;
 
   const user = await authQueries.findByEmail(email);
   const stored = user ? await authQueries.getEmailCode(user.id) : null;
@@ -203,7 +232,7 @@ export const forgotVerify = async (req, res) => {
     return res.status(400).json({ error: 'Invalid or expired code' });
   }
 
-  const submitted = Buffer.from(hashCode(code.toString()), 'hex');
+  const submitted = Buffer.from(hashCode(code), 'hex');
   const storedBuf = Buffer.from(stored.email_code, 'hex');
   if (submitted.length !== storedBuf.length || !crypto.timingSafeEqual(submitted, storedBuf)) {
     await logAuthEvent('forgot_bad_code', { userId: user.id, ip: req.ip });
@@ -220,11 +249,16 @@ export const forgotVerify = async (req, res) => {
 
 // step 3: apply the new password and wipe every session so any attacker is kicked out
 export const forgotReset = async (req, res) => {
-  const { token, newPassword } = req.body;
-
-  if (!token || !newPassword) {
-    return res.status(400).json({ error: 'Token and new password are required' });
+  // reset token is crypto.randomBytes(32).toString('hex') so always 64 hex chars
+  const check = validate(() => ({
+    token: requireString(req.body.token, 'Token', { min: 64, max: 64 }),
+    newPassword: requirePassword(req.body.newPassword),
+  }));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
   }
+
+  const { token, newPassword } = check.value;
 
   const user = await authQueries.findByResetToken(token);
   if (!user || new Date() > new Date(user.password_reset_expires)) {
