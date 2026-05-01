@@ -1,10 +1,19 @@
 <!doctype html>
 <html>
   <body>
+    <!-- demonstrates browser CORS rules restrict cross origin js requests -->
     <button id="me">Request /api/auth/me</button>
     <button id="bio">POST /api/users/bio</button>
+    <button id="login-csrf">CSRF login test</button>
 
     <p id="output"></p>
+
+    <!-- demonstrate the origin checks working on our server, as a browser can still submit a cross-site form POST, but server REJECTS it -->
+    <form id="login-csrf-form" action="http://localhost:3000/api/auth/login" method="POST" target="hidden-frame">
+      <input type="hidden" name="email" value="attacker@example.com" />
+      <input type="hidden" name="password" value="attacker-password" />
+    </form>
+    <button id="login-csrf-form-btn">CSRF login form test</button>
 
     <script>
       const TARGET = 'http://localhost:3000';
@@ -52,6 +61,39 @@
           log('blocked or failed sending /api/users/bio');
           log(err);
         }
+      });
+
+      document.getElementById('login-csrf').addEventListener('click', async () => {
+        out.textContent = '';
+
+        try {
+          const res = await fetch(TARGET + '/api/auth/login', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              // due to this application/json content type, the browser send an OPTIONS preflight request first.
+              // our server does not allow CORS, so users broswer blocks the request before the POST is even sent
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: 'attacker@example.com',
+              password: 'attacker-password',
+            }),
+          });
+
+          log('status: ' + res.status);
+          log(await res.text());
+        } catch (err) {
+          log('blocked or failed sending /api/auth/login');
+          log(err);
+        }
+      });
+
+      document.getElementById('login-csrf-form-btn').addEventListener('click', () => {
+        out.textContent = '';
+        log('Submitting cross-site login form...');
+        document.getElementById('login-csrf-form').submit();
+        log('If origin middleware works, the server rejects it with 403 Bad origin.');
       });
     </script>
   </body>
