@@ -3,9 +3,15 @@ import * as postQueries from '../queries/posts.js';
 import * as userQueries from '../queries/users.js';
 import { logPostEvent } from '../lib/log.js';
 import { sanitiseHtml } from '../lib/sanitize.js';
+import { validate, requireString, requirePositiveInt } from '../lib/validate.js';
 
 export const getComments = async (req, res) => {
-  const { id } = req.params;
+  const check = validate(() => requirePositiveInt(req.params.id, 'post id'));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
+  }
+
+  const id = check.value;
   const post = await postQueries.findById(id);
 
   if (!post) return res.status(404).json({ error: 'Post not found' });
@@ -28,17 +34,15 @@ export const getComments = async (req, res) => {
 };
 
 export const createComment = async (req, res) => {
-  const { id } = req.params;
-  const { content } = req.body;
-
-  // starting server side validation but will improve across all routes in v short future
-  if (!content || !content.trim()) {
-    return res.status(400).json({ error: 'Comment is required' });
+  const check = validate(() => ({
+    id: requirePositiveInt(req.params.id, 'post id'),
+    content: requireString(req.body.content, 'Comment', { min: 1, max: 2000, trim: true }),
+  }));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
   }
 
-  if (content.trim().length > 2000) {
-    return res.status(400).json({ error: 'Comment must be under 2000 characters' });
-  }
+  const { id, content } = check.value;
 
   const post = await postQueries.findById(id);
   if (!post) return res.status(404).json({ error: 'Post not found' });
@@ -53,18 +57,26 @@ export const createComment = async (req, res) => {
     return res.status(403).json({ error: 'Comments are only allowed on approved posts' }); // informative for author/admin
   }
 
-  const comment = await commentQueries.create(id, req.userId, sanitiseHtml(content.trim()));
+  const comment = await commentQueries.create(id, req.userId, sanitiseHtml(content));
   logPostEvent('comment_created', { userId: req.userId, postId: post.id, commentId: comment.id });
   res.status(201).json({ comment });
 };
 
 export const deleteComment = async (req, res) => {
-  const { id, commentId } = req.params;
+  const check = validate(() => ({
+    id: requirePositiveInt(req.params.id, 'post id'),
+    commentId: requirePositiveInt(req.params.commentId, 'comment id'),
+  }));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
+  }
+
+  const { id, commentId } = check.value;
 
   const comment = await commentQueries.findById(commentId);
   if (!comment) return res.status(404).json({ error: 'Comment not found' });
 
-  if (comment.post_id !== parseInt(id)) {
+  if (comment.post_id !== id) {
     // make sure the comment actually belongs to this post
     return res.status(404).json({ error: 'Comment not found' });
   }
