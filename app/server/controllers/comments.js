@@ -1,7 +1,7 @@
 import * as commentQueries from '../queries/comments.js';
 import * as postQueries from '../queries/posts.js';
 import * as userQueries from '../queries/users.js';
-import { logPostEvent } from '../lib/log.js';
+import { recordEvent, AuditEvent } from '../lib/audit.js';
 import { sanitiseHtml } from '../lib/sanitize.js';
 import { validate, requireString, requirePositiveInt } from '../lib/validate.js';
 
@@ -58,7 +58,7 @@ export const createComment = async (req, res) => {
   }
 
   const comment = await commentQueries.create(id, req.userId, sanitiseHtml(content));
-  logPostEvent('comment_created', { userId: req.userId, postId: post.id, commentId: comment.id });
+  await recordEvent(req, AuditEvent.COMMENT_CREATED, { actorId: req.userId, postId: post.id, commentId: comment.id });
   res.status(201).json({ comment });
 };
 
@@ -88,8 +88,8 @@ export const deleteComment = async (req, res) => {
   if (!isAuthor && !isAdmin) return res.status(404).json({ error: 'Comment not found' }); // 404 to hide existence
 
   await commentQueries.remove(commentId);
-  logPostEvent('comment_deleted', {
-    userId: req.userId,
+  await recordEvent(req, AuditEvent.COMMENT_DELETED, {
+    actorId: req.userId,
     postId: comment.post_id,
     commentId: comment.id,
     detail: isAdmin && !isAuthor ? 'admin delete' : 'author delete',

@@ -1,16 +1,16 @@
 import * as postQueries from '../queries/posts.js';
 import * as userQueries from '../queries/users.js';
-import { logPostEvent } from '../lib/log.js';
+import { recordEvent, AuditEvent } from '../lib/audit.js';
 import { sanitiseHtml } from '../lib/sanitize.js';
 import { validate, requireString, requirePositiveInt, requireOneOf } from '../lib/validate.js';
 
-// get all approved posts
+// get all approved posts, used for the homepage
 export const getPosts = async (req, res) => {
   const posts = await postQueries.findAllApproved();
   res.json({ posts });
 };
 
-// get single approved post by its ID
+// get single approved post by its id
 export const getPostById = async (req, res) => {
   const check = validate(() => requirePositiveInt(req.params.id, 'post id'));
   if (!check.ok) {
@@ -36,7 +36,7 @@ export const getPostById = async (req, res) => {
   res.json({ post });
 };
 
-// get all posts by user Id (for profile page)
+// get all APPROVED public posts by user Id (for profile page)
 // profile page is currently viewable just for logged in user, so could remove this endpoint and just call getMyPosts
 export const getPostByUser = async (req, res) => {
   const check = validate(() => requirePositiveInt(req.params.userId, 'user id'));
@@ -46,6 +46,18 @@ export const getPostByUser = async (req, res) => {
 
   const userId = check.value;
   const posts = await postQueries.findByUser(userId);
+  res.json({ posts });
+};
+
+// get ALL posts of all statuses for the current logged in user
+export const getMyPosts = async (req, res) => {
+  const posts = await postQueries.findByUserId(req.userId);
+  res.json({ posts });
+};
+
+// get all posts no matter the status, used for the admin panel
+export const getAdminPosts = async (req, res) => {
+  const posts = await postQueries.findAll();
   res.json({ posts });
 };
 
@@ -66,7 +78,7 @@ export const createPost = async (req, res) => {
 
   // create new post with authd users id, default status is pending
   const post = await postQueries.create(req.userId, safeTitle, safeContent);
-  logPostEvent('post_created', { userId: req.userId, postId: post.id });
+  await recordEvent(req, AuditEvent.POST_CREATED, { actorId: req.userId, postId: post.id });
   res.status(201).json({ post });
 };
 
@@ -107,8 +119,8 @@ export const updatePost = async (req, res) => {
   // if an admin updates post, LEAVE state as it, i.e. if approved STAYS approved
   // whereas if user updates post goes back to pending status
   const updated = await postQueries.update(id, safeTitle, safeContent, isAdmin ? post.status : 'pending');
-  logPostEvent('post_updated', {
-    userId: req.userId,
+  await recordEvent(req, AuditEvent.POST_UPDATED, {
+    actorId: req.userId,
     postId: post.id,
     detail: isAdmin && !isAuthor ? 'admin edit' : 'author edit, status reset to pending',
   });
@@ -133,22 +145,12 @@ export const deletePost = async (req, res) => {
   if (!isAuthor && !isAdmin) return res.status(404).json({ error: 'Post not found' }); // hide post existence so instead of 403 forbidden, return 404
 
   await postQueries.remove(id);
-  logPostEvent('post_deleted', {
-    userId: req.userId,
+  await recordEvent(req, AuditEvent.POST_DELETED, {
+    actorId: req.userId,
     postId: post.id,
     detail: isAdmin && !isAuthor ? 'admin delete' : 'author delete',
   });
   res.json({ message: 'Post deleted' });
-};
-
-export const getMyPosts = async (req, res) => {
-  const posts = await postQueries.findByUserId(req.userId);
-  res.json({ posts });
-};
-
-export const getAdminPosts = async (req, res) => {
-  const posts = await postQueries.findAll();
-  res.json({ posts });
 };
 
 export const updatePostStatus = async (req, res) => {
@@ -167,7 +169,7 @@ export const updatePostStatus = async (req, res) => {
 
   // admins can update post status to approved or rejected only
   const updated = await postQueries.updateStatus(id, status);
-  logPostEvent('post_status_changed', { userId: req.userId, postId: post.id, detail: status });
+  await recordEvent(req, AuditEvent.POST_STATUS_CHANGED, { actorId: req.userId, postId: post.id, detail: status });
   res.json({ post: updated });
 };
 

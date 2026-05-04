@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { generateCaptcha, verifyCaptcha } from '../lib/captcha.js';
 import { hashCode } from '../lib/crypto.js';
 import { sendEmail } from '../lib/email.js';
-import { logAuthEvent } from '../lib/log.js';
+import { recordEvent, AuditEvent } from '../lib/audit.js';
 import { generateCSRFToken } from '../middleware/csrf.js';
 import { createSession, destroySession, regenerateSession } from '../middleware/session.js';
 import * as authQueries from '../queries/auth.js';
@@ -43,7 +43,7 @@ export const register = async (req, res) => {
   const { username, email, password, captchaToken, captchaAnswer } = check.value; // we have cleaned and validated input here
 
   if (!verifyCaptcha(captchaToken, captchaAnswer)) {
-    await logAuthEvent('register_captcha_fail', { ip: req.ip });
+    await recordEvent(req, AuditEvent.REGISTER_CAPTCHA_FAIL);
     return res.status(400).json({ error: 'Incorrect captcha, try again' });
   }
 
@@ -53,12 +53,12 @@ export const register = async (req, res) => {
 
   try {
     const newUser = await authQueries.createUser(username, email, hashed);
-    await logAuthEvent('register', { userId: newUser.id, ip: req.ip });
+    await recordEvent(req, AuditEvent.REGISTER, { actorId: newUser.id });
   } catch (err) {
     // prevents account enumeration by ALWAYS returning same success message
     // whether actual registration success or duplicate username/email error (Postgres error 23505, unique constraint violation).
     if (err.code === '23505') {
-      await logAuthEvent('register_duplicate', { ip: req.ip });
+      await recordEvent(req, AuditEvent.REGISTER_DUPLICATE);
       return res.json({ message: 'Registration successful' });
     }
     throw err;
@@ -87,7 +87,7 @@ export const login = async (req, res) => {
     : await bcrypt.compare(password, FAKE_HASH);
 
   if (!user || !valid) {
-    await logAuthEvent('login_fail', { ip: req.ip });
+    await recordEvent(req, AuditEvent.LOGIN_FAIL);
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
@@ -105,12 +105,12 @@ export const login = async (req, res) => {
     await sessionQueries.deletePendingSessionsByUserId(user.id);
 
     await createSession(res, user.id, true, true); // true for pending session, true as admin
-    await logAuthEvent('login_2fa_pending', { userId: user.id, ip: req.ip });
+    await recordEvent(req, AuditEvent.LOGIN_2FA_PENDING, { actorId: user.id });
     return res.json({ message: '2FA code sent', redirect: '/sign-in/2fa' });
   }
 
   await createSession(res, user.id, false, false); // user session, false for no 2fa pending, false for not admin
-  await logAuthEvent('login_success', { userId: user.id, ip: req.ip });
+  await recordEvent(req, AuditEvent.LOGIN_SUCCESS, { actorId: user.id });
   res.json({ message: 'Login successful', redirect: '/' });
 };
 
@@ -125,7 +125,7 @@ export const verify2fa = async (req, res) => {
   const user = await authQueries.getEmailCode(req.pendingUserId);
 
   if (!user || !user.email_code) {
-    await logAuthEvent('2fa_fail', { userId: req.pendingUserId, ip: req.ip, detail: 'no pending code' });
+    await recordEvent(req, AuditEvent.TWOFA_FAIL, { actorId: req.pendingUserId, detail: 'no pending code' });
     return res.status(401).json({ error: 'Please log in first' });
   }
 
@@ -133,7 +133,7 @@ export const verify2fa = async (req, res) => {
   if (new Date() > new Date(user.email_code_expires)) {
     await destroySession(req, res);
     await authQueries.clearEmailCode(req.pendingUserId);
-    await logAuthEvent('2fa_expired', { userId: req.pendingUserId, ip: req.ip });
+    await recordEvent(req, AuditEvent.TWOFA_EXPIRED, { actorId: req.pendingUserId });
     return res.status(401).json({ error: 'Code expired, please log in again' });
   }
 
@@ -149,18 +149,18 @@ export const verify2fa = async (req, res) => {
     if (row?.two_factor_attempts >= 3) {
       await destroySession(req, res);
       await authQueries.clearEmailCode(req.pendingUserId);
-      await logAuthEvent('2fa_lockout', { userId: req.pendingUserId, ip: req.ip });
+      await recordEvent(req, AuditEvent.TWOFA_LOCKOUT, { actorId: req.pendingUserId });
       return res.status(401).json({ error: 'Too many attempts, please log in again' });
     }
 
-    await logAuthEvent('2fa_fail', { userId: req.pendingUserId, ip: req.ip, detail: 'invalid code' });
+    await recordEvent(req, AuditEvent.TWOFA_FAIL, { actorId: req.pendingUserId, detail: 'invalid code' });
     return res.status(401).json({ error: 'Invalid code' });
   }
 
   // 2FA passed, regenerate session to prevent fixation
   await authQueries.clearEmailCode(req.pendingUserId);
   await regenerateSession(req, res, req.pendingUserId, true); // true as admin to get shorter session
-  await logAuthEvent('2fa_success', { userId: req.pendingUserId, ip: req.ip });
+  await recordEvent(req, AuditEvent.TWOFA_SUCCESS, { actorId: req.pendingUserId });
 
   res.json({ message: 'Login successful', redirect: '/' });
 };
@@ -168,7 +168,7 @@ export const verify2fa = async (req, res) => {
 export const logout = async (req, res) => {
   const userId = req.userId;
   await destroySession(req, res);
-  await logAuthEvent('logout', { userId, ip: req.ip });
+  await recordEvent(req, AuditEvent.LOGOUT, { actorId: userId });
   res.json({ message: 'Logged out', redirect: '/sign-in' });
 };
 
@@ -206,9 +206,9 @@ export const forgotRequest = async (req, res) => {
 
     // DO NOT await the email, as otherwise the delay could be used to enumerate accounts
     sendEmail(email, 'SoundAdvice password reset code', `Your code is: ${code}. It expires in 10 minutes.`);
-    await logAuthEvent('forgot_requested', { userId: user.id, ip: req.ip });
+    await recordEvent(req, AuditEvent.FORGOT_REQUESTED, { actorId: user.id });
   } else {
-    await logAuthEvent('forgot_unknown_email', { ip: req.ip });
+    await recordEvent(req, AuditEvent.FORGOT_UNKNOWN_EMAIL);
   }
 
   res.json({ message: 'If that email is registered, a code has been sent.' });
@@ -237,7 +237,7 @@ export const forgotVerify = async (req, res) => {
   const submitted = Buffer.from(hashCode(code), 'hex');
   const storedBuf = Buffer.from(stored.email_code, 'hex');
   if (submitted.length !== storedBuf.length || !crypto.timingSafeEqual(submitted, storedBuf)) {
-    await logAuthEvent('forgot_bad_code', { userId: user.id, ip: req.ip });
+    await recordEvent(req, AuditEvent.FORGOT_BAD_CODE, { actorId: user.id });
     return res.status(400).json({ error: 'Invalid or expired code' });
   }
 
@@ -271,7 +271,7 @@ export const forgotReset = async (req, res) => {
   await authQueries.updatePassword(user.id, hashed);
   await authQueries.clearResetToken(user.id);
   await sessionQueries.deleteAllSessionsByUserId(user.id);
-  await logAuthEvent('forgot_reset', { userId: user.id, ip: req.ip });
+  await recordEvent(req, AuditEvent.FORGOT_RESET, { actorId: user.id });
 
   res.json({ message: 'Password updated', redirect: '/sign-in' });
 };
@@ -296,7 +296,7 @@ export const magicLinkRequest = async (req, res) => {
       'SoundAdvice sign-in method unavailable',
       `This account cannot use magic-link sign in. Please sign in with your password and 2FA verification code instead.`
     );
-    await logAuthEvent('magic_link_admin_blocked', { userId: user.id, ip: req.ip });
+    await recordEvent(req, AuditEvent.MAGIC_LINK_ADMIN_BLOCKED, { actorId: user.id });
   } else if (user) {
     const token = crypto.randomBytes(32).toString('hex');
     const tokenHash = hashCode(token);
@@ -308,9 +308,9 @@ export const magicLinkRequest = async (req, res) => {
 
     // DO NOT await the email, as otherwise the delay could be used to enumerate accounts
     sendEmail(email, 'Your SoundAdvice sign-in link', `Click to sign in: ${link}\n\nThis link expires in 10 minutes.`);
-    await logAuthEvent('magic_link_request', { userId: user.id, ip: req.ip });
+    await recordEvent(req, AuditEvent.MAGIC_LINK_REQUEST, { actorId: user.id });
   } else {
-    await logAuthEvent('magic_link_unknown_email', { ip: req.ip });
+    await recordEvent(req, AuditEvent.MAGIC_LINK_UNKNOWN_EMAIL);
   }
 
   res.json({ message: 'If that account exists, a sign-in link has been sent.' });
@@ -339,12 +339,12 @@ export const magicLinkVerify = async (req, res) => {
   if (user.is_admin) {
     // admin should never have a magic link token set, as they are not allowed to use this single factor login method
     // but just as backup, BLOCK admins just in case
-    await logAuthEvent('magic_link_admin_verify_blocked', { userId: user.id, ip: req.ip });
+    await recordEvent(req, AuditEvent.MAGIC_LINK_ADMIN_VERIFY_BLOCKED, { actorId: user.id });
     return res.status(400).json({ error: 'Invalid or expired link' });
   }
 
   await createSession(res, user.id, false, false);
-  await logAuthEvent('magic_link_login', { userId: user.id, ip: req.ip });
+  await recordEvent(req, AuditEvent.MAGIC_LINK_LOGIN, { actorId: user.id });
 
   res.json({ message: 'Signed in', redirect: '/' });
 };
