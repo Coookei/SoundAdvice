@@ -10,17 +10,23 @@ import {
   redirectIfNotPending,
 } from '../middleware/auth.page.js';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const htmlPath = (file) => join(__dirname, '../../public/html', file);
 
-// read the page off disk, inject SRI hashes into its <script> tags, then send it
-function sendPage(file) {
+const loadPage = (file) => {
+  return injectIntegrity(fs.readFileSync(htmlPath(file), 'utf-8'));
+};
+
+const sendPage = (file) => {
+  // read the page off disk, inject SRI hashes into its <script> tags, then send it
+  const cached = isDev ? null : loadPage(file); // in prod the HTML is cached in memory
   return (_req, res) => {
-    const content = fs.readFileSync(htmlPath(file), 'utf-8');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(injectIntegrity(content));
+    res.send(isDev ? loadPage(file) : cached);
   };
-}
+};
 
 const router = Router();
 
