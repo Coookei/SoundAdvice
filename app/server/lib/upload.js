@@ -169,7 +169,12 @@ export function parseFileUpload(req) {
           return reject(new Error('No file uploaded'));
         }
 
-        resolve({ fileBuffer, fileExt, fields });
+         // generate unique filename - prevents path traversal attacks
+          const uniqueFilename = crypto.randomBytes(8).toString('hex'); 
+          const timestamp = Date.now(); 
+          fileName = `${timestamp}-${uniqueFilename}.${fileExt}`; 
+
+        resolve({ fileBuffer, fileExt, fieldName, fields });
       } catch (err) {
         reject(err);
       }
