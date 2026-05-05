@@ -1,100 +1,122 @@
 async function loadPosts() {
-  const response = await fetch('/api/posts/my');
-  const { posts } = await response.json();
+  try { 
+    const response = await fetch('/api/posts/my');
+    const { posts } = await response.json();
 
-  const postList = document.getElementById('myPosts');
+    const postList = document.getElementById('myPosts');
 
-  for (let i = 0; i < posts.length; i++) {
-    const post = posts[i];
-
-    const article = document.createElement('article');
-    article.classList.add('post');
-
-    const link = document.createElement('a');
-    link.href = '/post/' + post.id;
-
-    const title = document.createElement('h3');
-    title.textContent = post.title;
-
-    link.appendChild(title);
-    article.appendChild(link);
-
-    const meta = document.createElement('p');
-    meta.textContent = new Date(post.created_at).toLocaleDateString();
-    article.appendChild(meta);
-
-    const status = document.createElement('span');
-    status.textContent = post.status;
-    meta.appendChild(document.createTextNode(' - '));
-    meta.appendChild(status);
-
-    const content = document.createElement('p');
-    content.textContent = post.content;
-    article.appendChild(content);
-
-    if (post.status !== 'rejected') {
-      // if users post is rejected, they can no longer edit it
-      const editLink = document.createElement('a');
-      editLink.href = '/post/' + post.id + '/edit';
-      editLink.textContent = 'Edit';
-      editLink.classList.add('link_btn');
-      article.appendChild(editLink);
+    if (!postList) {
+      return; 
     }
 
-    const delBtn = document.createElement('button');
-    delBtn.textContent = 'Delete';
-    delBtn.classList.add('link_btn');
-    delBtn.addEventListener('click', async () => {
-      // remove error message if already existing
-      const existing = document.getElementById('post_error');
-      if (existing) existing.remove();
+    for (let i = 0; i < posts.length; i++) {
+      const post = posts[i];
 
-      const res = await csrfFetch('/api/posts/' + post.id, { method: 'DELETE' });
-      const data = await res.json();
+      const article = document.createElement('article');
+      article.classList.add('post');
 
-      if (res.ok) {
-        article.remove();
-      } else {
-        showError(data.error || 'Something went wrong');
+      const link = document.createElement('a');
+      link.href = '/post/' + post.id;
+
+      const title = document.createElement('h3');
+      title.textContent = post.title;
+
+      link.appendChild(title);
+      article.appendChild(link);
+
+      const meta = document.createElement('p');
+      meta.textContent = new Date(post.created_at).toLocaleDateString();
+      article.appendChild(meta);
+
+      const status = document.createElement('span');
+      status.textContent = post.status;
+      meta.appendChild(document.createTextNode(' - '));
+      meta.appendChild(status);
+
+      const content = document.createElement('p');
+      content.textContent = post.content;
+      article.appendChild(content);
+
+      const image = post.imagePath; 
+
+      if (post.imagePath) {
+      const img = document.createElement('img');
+      img.src = image
+      img.classList.add('post_img');
+
+      img.onerror = () => {
+        console.warn('Image failed to load', img.src); 
       }
-    });
-    article.appendChild(delBtn);
 
-    postList.appendChild(article);
+      article.appendChild(img); 
+    }
+
+      if (post.status !== 'rejected') {
+        // if users post is rejected, they can no longer edit it
+        const editLink = document.createElement('a');
+        editLink.href = '/post/' + post.id + '/edit';
+        editLink.textContent = 'Edit';
+        editLink.classList.add('link_btn');
+        article.appendChild(editLink);
+      }
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Delete';
+      delBtn.classList.add('link_btn');
+      delBtn.addEventListener('click', async () => {
+        // remove error message if already existing
+        const existing = document.getElementById('post_error');
+        if (existing) existing.remove();
+
+        const res = await csrfFetch('/api/posts/' + post.id, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (res.ok) {
+          article.remove();
+        } else {
+          showError(data.error || 'Something went wrong');
+        }
+      });
+      article.appendChild(delBtn);
+
+      postList.appendChild(article);
+    }
+  } catch(err) {
+    console.error('loadPosts failed', err);
   }
-}
+} 
 
-loadPosts();
+  loadPosts();
 
-function showError(msg) {
-  const p = document.createElement('p');
-  p.id = 'post_error';
-  p.textContent = msg;
-  p.classList.add('error');
-  document.getElementById('myPosts').insertBefore(p, document.getElementById('search_icon'));
-}
+  function showError(msg) {
+    const p = document.createElement('p');
+    p.id = 'post_error';
+    p.textContent = msg;
+    p.classList.add('error');
+    document.getElementById('myPosts').insertBefore(p, document.getElementById('search_icon'));
+  }
 
-function filterPosts() {
-  const filter = document.getElementById('search').value.toLowerCase(); // get user input from the search bar
+  function filterPosts() {
+    const filter = document.getElementById('search').value.toLowerCase(); // get user input from the search bar
 
-  // extract all posts from DOM as they are each in their own article tag
-  const posts = document.getElementById('myPosts').getElementsByTagName('article');
+    // extract all posts from DOM as they are each in their own article tag
+    const posts = document.getElementById('myPosts').getElementsByTagName('article');
 
-  // can now loop over and simple hide posts that dont match title/content
-  for (let i = 0; i < posts.length; i++) {
-    const title = posts[i].getElementsByTagName('h3')[0]; // title is always first h3 tag in the article
-    const content = posts[i].getElementsByTagName('p')[1]; // second p is the real content, 1st is data+status
+    // can now loop over and simple hide posts that dont match title/content
+    for (let i = 0; i < posts.length; i++) {
+      const title = posts[i].getElementsByTagName('h3')[0]; // title is always first h3 tag in the article
+      const content = posts[i].getElementsByTagName('p')[1]; // second p is the real content, 1st is data+status
 
-    const titleText = title.textContent.toLowerCase();
-    const contentText = content.textContent.toLowerCase();
+      const titleText = title.textContent.toLowerCase();
+      const contentText = content.textContent.toLowerCase();
 
-    if (titleText.includes(filter) || contentText.includes(filter)) {
-      posts[i].style.display = ''; // allow display
-    } else {
-      // if not match then add display none to hide
-      posts[i].style.display = 'none';
+      if (titleText.includes(filter) || contentText.includes(filter)) {
+        posts[i].style.display = ''; // allow display
+      } else {
+        // if not match then add display none to hide
+        posts[i].style.display = 'none';
+      }
     }
   }
-}
 
 document.getElementById('search').addEventListener('keyup', filterPosts); // after each key press, filter posts

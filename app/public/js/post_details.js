@@ -21,7 +21,20 @@ async function loadPost() {
 
   document.getElementById('postTitle').textContent = post.title;
   document.getElementById('postAuthor').textContent = post.username;
-  document.getElementById('postContent').innerHTML = '<p>' + post.content + '</p>';
+
+  const postContent = document.getElementById('postContent');
+  postContent.textContent = '';
+
+  const text = document.createElement('p');
+  text.textContent = post.content;
+  postContent.appendChild(text);
+
+  if (post.imagePath) {
+    const img = document.createElement('img');
+    img.src = post.imagePath;
+    img.classList.add('post_img');
+    postContent.appendChild(img); 
+  }
 
   if (post.status === 'pending' || post.status === 'rejected') {
     const statusElement = document.getElementById('postStatus');

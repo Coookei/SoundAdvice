@@ -33,6 +33,8 @@ function splitBuffer(buffer, delimiter) {
 // profile pic upload
 export function parseFileUpload(req) {
   return new Promise((resolve, reject) => {
+
+    let fields = {}; 
     // checks content type of request using headers
     const contentType = req.headers['content-type'];
 
@@ -123,6 +125,18 @@ export function parseFileUpload(req) {
           // extract file content after headers
           const body = part.slice(headerEnd + 4, part.lastIndexOf('\r\n'));
 
+          // detect text fields
+          const nameMatch = header.match(/name="(.+?)"/); 
+
+          if (nameMatch && !header.includes('filename=')) {
+            const fieldName = nameMatch[1];
+            const value = body.toString().trim(); 
+            fields[fieldName] = value; 
+            continue;
+          }
+
+
+
           // skip non file fields
           if (!header.includes('filename=')) {
             continue;
@@ -155,7 +169,7 @@ export function parseFileUpload(req) {
           return reject(new Error('No file uploaded'));
         }
 
-        resolve({ fileBuffer, fileExt });
+        resolve({ fileBuffer, fileExt, fields });
       } catch (err) {
         reject(err);
       }

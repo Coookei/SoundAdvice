@@ -10,6 +10,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
+const uploadDir = path.join(process.cwd(), 'uploads');
+
 // middleware
 app.use(headersMiddleware); // security headers applied to every response
 app.use(express.json());
@@ -17,7 +19,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(sessionMiddleware); // attach req.userId from session cookie on every request
 app.use('/html', (_req, res) => res.status(403).send('Forbidden')); // block direct access to html files, only served via protected page routes
 app.use(express.static(join(__dirname, '../public'))); // serve ALL static assets from public dir, while protecting from traversing out in url eg ../../
-app.use('/uploads', express.static(path.resolve('uploads'))); // serve uploaded profile pictures
+app.use('/uploads', express.static(uploadDir)); // serve uploaded profile pictures
 
 // page routes and API routes
 app.use('/', indexRouter);

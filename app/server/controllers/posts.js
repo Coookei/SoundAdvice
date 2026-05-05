@@ -2,6 +2,10 @@ import * as postQueries from '../queries/posts.js';
 import * as userQueries from '../queries/users.js';
 import { logPostEvent } from '../lib/log.js';
 import { sanitiseHtml } from '../lib/sanitize.js';
+import { parseFileUpload } from '../lib/upload.js';
+import fs from 'fs/promises'; 
+import path from 'path';
+import { create } from 'domain';
 
 // get all approved posts
 export const getPosts = async (req, res) => {
@@ -38,21 +42,73 @@ export const getPostByUser = async (req, res) => {
 };
 
 export const createPost = async (req, res) => {
-  const { title, content } = req.body;
+  try { 
+    let title, content;
+    let fileBuffer = null;
+    let fileExt = null; 
 
-  if (!title || !content) {
+    const contentType = req.headers["content-type"] || ''; 
+
+    if (contentType.includes('multipart/form-data')) {
+      try { 
+        const result = await parseFileUpload(req); 
+
+        fileBuffer = result.fileBuffer;
+        fileExt = result.fileExt;
+
+        title = result.fields?.title;
+        content = result.fields?.content;
+        
+      } catch (err) {
+        console.warn('File upload skipped', err.message);
+        fileBuffer = null;
+        fileExt = null; 
+      } 
+    } else { 
+      // fallback (no image)
+      ({ title, content } = req.headers);  
+    }
+
+    if (!title || !content) {
     return res.status(400).json({ error: 'Title and content are required' });
-  }
+    }
 
-  // sanitise on write so stored content can only contain whitelisted tags
-  const safeTitle = sanitiseHtml(title);
-  const safeContent = sanitiseHtml(content);
+    // sanitise on write so stored content can only contain whitelisted tags
+    const safeTitle = sanitiseHtml(title);
+    const safeContent = sanitiseHtml(content);
 
-  // create new post with authd users id, default status is pending
-  const post = await postQueries.create(req.userId, safeTitle, safeContent);
-  logPostEvent('post_created', { userId: req.userId, postId: post.id });
-  res.status(201).json({ post });
-};
+    let imagePath = null;
+
+    if (fileBuffer) { 
+
+      const uploadDir = path.join(process.cwd(), 'uploads'); 
+      await fs.mkdir(uploadDir, {
+        recursive: true
+      });
+
+      const filename = `post_${req.userId}_${Date.now()}.${fileExt}`; 
+      const fullPath = path.join(uploadDir, filename);
+
+      await fs.writeFile(fullPath, fileBuffer);
+
+      imagePath = `/uploads/${filename}`;
+    }
+
+    // create new post with authd users id, default status is pending
+    const post = await postQueries.create(
+      req.userId,
+       safeTitle, 
+       safeContent,
+       imagePath
+      );
+
+    logPostEvent('post_created', { userId: req.userId, postId: post.id });
+    res.status(201).json({ post });
+  } catch (err) {
+    console.error('createPost failed', err); 
+    res.status(400).json({ error: err.message }); 
+}
+}; 
 
 export const updatePost = async (req, res) => {
   const { id } = req.params;
