@@ -124,6 +124,8 @@ const appendAuditFile = async (entry) => {
 
 // main function called to log an audit event
 export const recordEvent = (req, type, fields = {}) => {
+  if (process.env.NODE_ENV === 'test') return; // do not record logs in testing
+
   const next = queue.then(() => createRecord(req, type, fields)); // add the creation of log event to the end of a queue
 
   // if error happens, catch here so doesnt break the queue
