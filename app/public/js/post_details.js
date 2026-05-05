@@ -10,10 +10,10 @@ async function loadPost() {
   if (!res.ok) {
     // if post not found or error, show post not found message and hide all other bits from page
     document.getElementById('postTitle').textContent = 'Post not found';
-    document.getElementById('postMeta').style.display = 'none';
-    document.getElementById('postContent').style.display = 'none';
-    document.getElementById('postActions').style.display = 'none';
-    document.getElementById('commentsSection').style.display = 'none';
+    document.getElementById('postMeta').classList.add('hidden');
+    document.getElementById('postContent').classList.add('hidden');
+    document.getElementById('postActions').classList.add('hidden');
+    document.getElementById('commentsSection').classList.add('hidden');
     return;
   }
 
@@ -26,7 +26,7 @@ async function loadPost() {
   if (post.status === 'pending' || post.status === 'rejected') {
     const statusElement = document.getElementById('postStatus');
     statusElement.textContent = 'Status: ' + post.status;
-    statusElement.style.display = '';
+    statusElement.classList.remove('hidden');
   }
   document.getElementById('edit_btn').href = '/post/' + post.id + '/edit';
 
@@ -36,13 +36,13 @@ async function loadPost() {
   currentUser = user; // after loading user first time store on client so can reuse
 
   if (user && (user.id === post.user_id || user.is_admin)) {
-    document.getElementById('postActions').style.display = '';
+    document.getElementById('postActions').classList.remove('hidden');
     if (post.status === 'rejected' && !user.is_admin) {
       // only admins can edit rejected posts, so hide edit button here
-      document.getElementById('edit_btn').style.display = 'none';
+      document.getElementById('edit_btn').classList.add('hidden');
     }
   } else {
-    document.getElementById('postActions').style.display = 'none';
+    document.getElementById('postActions').classList.add('hidden');
   }
 
   // attach listener to delete button
@@ -65,9 +65,9 @@ async function loadPost() {
 
   // decide what to show for comment form based on auth and post status
   if (!user) {
-    document.getElementById('loginToComment').style.display = ''; // show the login prommpt as guest
+    document.getElementById('loginToComment').classList.remove('hidden'); // show the login prommpt as guest
   } else if (post.status === 'approved') {
-    document.getElementById('commentForm').style.display = ''; // as logged in and post approved, show comment form
+    document.getElementById('commentForm').classList.remove('hidden'); // as logged in and post approved, show comment form
   }
   // if user logged in but the post in not approved, then comment form stays hidden as cant leave comments when pending/rejected
 

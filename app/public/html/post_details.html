@@ -5,7 +5,13 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
     <link rel="stylesheet" href="/css/style.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <!-- hash set to font-awesome 4.7.0 so if CDN file ever modified, it wont be loaded -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+      integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN"
+      crossorigin="anonymous"
+    />
     <script src="/js/post_details.js" defer></script>
     <script src="/js/shared.js" defer></script>
   </head>
@@ -13,12 +19,12 @@
     <header>
       <a href="/"><img id="logo" src="/images/logo.png" /></a>
       <h1>Sound Advice</h1>
-      <a id="login_btn" href="/sign-in" style="display: none">Log in</a>
-      <div class="dropdown" id="user_dropdown" style="display: none">
+      <a id="login_btn" class="hidden" href="/sign-in">Log in</a>
+      <div class="dropdown hidden" id="user_dropdown">
         <button id="login_link">Username <i class="fa fa-caret-down"></i></button>
         <div class="dropdown-content">
           <a href="/profile">Profile</a>
-          <a href="/admin/approval" id="admin_panel_link" style="display: none">Admin Panel</a>
+          <a class="hidden" href="/admin/approval" id="admin_panel_link">Admin Panel</a>
           <a id="logout_btn">Log out</a>
         </div>
       </div>
@@ -34,13 +40,13 @@
 
     <main>
       <section id="postView">
-        <div id="postActions" style="display: none">
+        <div id="postActions" class="hidden">
           <a id="edit_btn" class="link_btn" href="#">Edit</a>
           <button id="delete_btn" class="link_btn">Delete</button>
         </div>
 
         <h2 id="postTitle">Post Title</h2>
-        <p id="postStatus" style="display: none"></p>
+        <p id="postStatus" class="hidden"></p>
         <p id="postMeta">Posted by <span id="postAuthor">username</span></p>
         <div id="postContent">
           <p>Post content goes here.</p>
@@ -51,9 +57,9 @@
         <h3>Comments</h3>
         <div id="commentsList"></div>
 
-        <p id="loginToComment" style="display: none"><a href="/sign-in">Log in</a> to leave a comment.</p>
+        <p id="loginToComment" class="hidden"><a href="/sign-in">Log in</a> to leave a comment.</p>
 
-        <form id="commentForm" style="display: none">
+        <form id="commentForm" class="hidden">
           <label for="comment_field">Leave a comment:</label>
           <textarea
             id="comment_field"

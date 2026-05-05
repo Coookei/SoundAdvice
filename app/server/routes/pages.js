@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import fs from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { injectIntegrity } from '../lib/sri.js';
 import {
   redirectIfGuest,
   redirectIfNotAdmin,
@@ -8,30 +10,43 @@ import {
   redirectIfNotPending,
 } from '../middleware/auth.page.js';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const html = (file) => join(__dirname, '../../public/html', file);
+const htmlPath = (file) => join(__dirname, '../../public/html', file);
+
+const loadPage = (file) => {
+  return injectIntegrity(fs.readFileSync(htmlPath(file), 'utf-8'));
+};
+
+const sendPage = (file) => {
+  // read the page off disk, inject SRI hashes into its <script> tags, then send it
+  const cached = isDev ? null : loadPage(file); // in prod the HTML is cached in memory
+  return (_req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(isDev ? loadPage(file) : cached);
+  };
+};
 
 const router = Router();
 
-router.get('/', (_req, res) => res.sendFile(html('index.html')));
-router.get('/sign-in', redirectIfAuthed, (_req, res) => res.sendFile(html('signin.html')));
-router.get('/sign-up', redirectIfAuthed, (_req, res) => res.sendFile(html('signup.html')));
-router.get('/sign-in/2fa', redirectIfNotPending, (_req, res) => res.sendFile(html('signin_2fa.html')));
-router.get('/forgot-password', redirectIfAuthed, (_req, res) => res.sendFile(html('forgot_password.html')));
-router.get('/forgot-password/code', redirectIfAuthed, (_req, res) => res.sendFile(html('forgot_password_code.html')));
-router.get('/forgot-password/reset', redirectIfAuthed, (_req, res) => res.sendFile(html('forgot_password_reset.html')));
-router.get('/sign-in/magic-link', redirectIfAuthed, (_req, res) => res.sendFile(html('magic_link.html')));
-router.get('/sign-in/magic-link/confirm', redirectIfAuthed, (_req, res) =>
-  res.sendFile(html('magic_link_confirm.html'))
-);
-router.get('/my-posts', redirectIfGuest, (_req, res) => res.sendFile(html('my_posts.html'))); //protected
-router.get('/profile', redirectIfGuest, (_req, res) => res.sendFile(html('profile.html'))); // protected
-router.get('/post/new', redirectIfGuest, (_req, res) => res.sendFile(html('post_new.html'))); // protected
-router.get('/search', (_req, res) => res.sendFile(html('search.html'))); // search is public so no auth
-router.get('/post/:id', (_req, res) => res.sendFile(html('post_details.html'))); // guests can view posts so no auth
-router.get('/post/:id/edit', redirectIfGuest, (_req, res) => res.sendFile(html('post_edit.html'))); // edit post is protected
-router.get('/admin/approval', redirectIfNotAdmin, (_req, res) => res.sendFile(html('admin_approval.html'))); // admin protection
-router.get('/admin/users', redirectIfNotAdmin, (_req, res) => res.sendFile(html('admin_users.html'))); // admin protection
-router.get('/admin/logs', redirectIfNotAdmin, (_req, res) => res.sendFile(html('admin_logs.html'))); // admin protection
+router.get('/', sendPage('index.html'));
+router.get('/sign-in', redirectIfAuthed, sendPage('signin.html'));
+router.get('/sign-up', redirectIfAuthed, sendPage('signup.html'));
+router.get('/sign-in/2fa', redirectIfNotPending, sendPage('signin_2fa.html'));
+router.get('/forgot-password', redirectIfAuthed, sendPage('forgot_password.html'));
+router.get('/forgot-password/code', redirectIfAuthed, sendPage('forgot_password_code.html'));
+router.get('/forgot-password/reset', redirectIfAuthed, sendPage('forgot_password_reset.html'));
+router.get('/sign-in/magic-link', redirectIfAuthed, sendPage('magic_link.html'));
+router.get('/sign-in/magic-link/confirm', redirectIfAuthed, sendPage('magic_link_confirm.html'));
+router.get('/my-posts', redirectIfGuest, sendPage('my_posts.html')); // protected
+router.get('/profile', redirectIfGuest, sendPage('profile.html')); // protected
+router.get('/post/new', redirectIfGuest, sendPage('post_new.html')); // protected
+router.get('/search', sendPage('search.html')); // public
+router.get('/post/:id', sendPage('post_details.html')); // public
+router.get('/post/:id/edit', redirectIfGuest, sendPage('post_edit.html')); // protected
+router.get('/admin/approval', redirectIfNotAdmin, sendPage('admin_approval.html')); // admin only
+router.get('/admin/users', redirectIfNotAdmin, sendPage('admin_users.html')); // admin only
+router.get('/admin/logs', redirectIfNotAdmin, sendPage('admin_logs.html')); // admin only
 
 export default router;

@@ -22,10 +22,10 @@ async function loadProfile() {
 
       // prevents broken image display
       img.onerror = () => {
-        img.style.display = 'none';
+        img.classList.add('hidden');
       };
     } else {
-      img.style.display = 'none';
+      img.classList.add('hidden');
     }
 
     // load profile info
@@ -154,7 +154,7 @@ document.getElementById('request_password_btn').addEventListener('click', async 
   if (res.ok) {
     alert('Code sent to your email.');
     // show input field for verification code
-    document.getElementById('password_code_row').style.display = 'flex';
+    document.getElementById('password_code_row').classList.remove('hidden');
   } else {
     alert(data.error || 'Failed to send code');
   }
