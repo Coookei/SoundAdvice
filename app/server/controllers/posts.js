@@ -122,7 +122,7 @@ export const updatePost = async (req, res) => {
   await recordEvent(req, AuditEvent.POST_UPDATED, {
     actorId: req.userId,
     postId: post.id,
-    detail: isAdmin && !isAuthor ? 'admin edit' : 'author edit, status reset to pending',
+    detail: isAdmin && !isAuthor ? 'admin edit' : 'author edit',
   });
   res.json({ post: updated });
 };
@@ -169,7 +169,11 @@ export const updatePostStatus = async (req, res) => {
 
   // admins can update post status to approved or rejected only
   const updated = await postQueries.updateStatus(id, status);
-  await recordEvent(req, AuditEvent.POST_STATUS_CHANGED, { actorId: req.userId, postId: post.id, detail: status });
+  await recordEvent(req, AuditEvent.POST_STATUS_CHANGED, {
+    actorId: req.userId,
+    postId: post.id,
+    detail: `${post.status} to ${status}`,
+  });
   res.json({ post: updated });
 };
 

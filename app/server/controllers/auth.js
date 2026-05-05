@@ -58,7 +58,9 @@ export const register = async (req, res) => {
     // prevents account enumeration by ALWAYS returning same success message
     // whether actual registration success or duplicate username/email error (Postgres error 23505, unique constraint violation).
     if (err.code === '23505') {
-      await recordEvent(req, AuditEvent.REGISTER_DUPLICATE);
+      await recordEvent(req, AuditEvent.REGISTER_DUPLICATE, {
+        detail: err.constraint?.includes('email') ? 'email' : 'username',
+      });
       return res.json({ message: 'Registration successful' });
     }
     throw err;
@@ -87,7 +89,7 @@ export const login = async (req, res) => {
     : await bcrypt.compare(password, FAKE_HASH);
 
   if (!user || !valid) {
-    await recordEvent(req, AuditEvent.LOGIN_FAIL);
+    await recordEvent(req, AuditEvent.LOGIN_FAIL, { detail: user ? 'wrong password' : 'unknown email' });
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
