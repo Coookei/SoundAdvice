@@ -84,7 +84,7 @@ export const computeHmac = (rowHash) => {
 let queue = Promise.resolve();
 
 const createRecord = async (req, type, fields) => {
-  if (!VALID_EVENTS.has(type)) {
+  if (!VALID_EVENTS.includes(type)) {
     // shouldnt happen as we use the AuditEvent constants in our code.
     throw new Error(`Unknown audit event type ${type}`);
   }
