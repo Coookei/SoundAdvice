@@ -32,5 +32,6 @@ router.get('/post/:id', (_req, res) => res.sendFile(html('post_details.html')));
 router.get('/post/:id/edit', redirectIfGuest, (_req, res) => res.sendFile(html('post_edit.html'))); // edit post is protected
 router.get('/admin/approval', redirectIfNotAdmin, (_req, res) => res.sendFile(html('admin_approval.html'))); // admin protection
 router.get('/admin/users', redirectIfNotAdmin, (_req, res) => res.sendFile(html('admin_users.html'))); // admin protection
+router.get('/admin/logs', redirectIfNotAdmin, (_req, res) => res.sendFile(html('admin_logs.html'))); // admin protection
 
 export default router;
