@@ -303,6 +303,9 @@ export const magicLinkRequest = async (req, res) => {
 
   const email = check.value;
 
+  const startedAt = Date.now(); // record start time to prevent timing based account enumeration
+  const minimumDelayMs = 1000; // 1 second
+
   const user = await authQueries.findByEmail(email);
 
   if (user?.is_admin) {
@@ -322,6 +325,7 @@ export const magicLinkRequest = async (req, res) => {
     const token = crypto.randomBytes(32).toString('hex');
     const tokenHash = hashCode(token);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
     await authQueries.setMagicLinkToken(user.id, tokenHash, expiresAt);
 
     // do not generate login link using the req object as could be manipualted, instead we use a BASE_URL env variable
@@ -341,7 +345,8 @@ export const magicLinkRequest = async (req, res) => {
     await recordEvent(req, AuditEvent.MAGIC_LINK_UNKNOWN_EMAIL);
   }
 
-  res.json({ message: 'If that account exists, a sign-in link has been sent.' });
+  await waitUntilMinimum(startedAt, minimumDelayMs); // wait a minimum time to prevent timing based account enumeration
+  res.json({ message: 'If that account exists, a sign-in link has been sent.' }); // always respond the same way to prevent account enumeration
 };
 
 // step 2: user clicks link in email which takes them to a confirm page. They click confirm
