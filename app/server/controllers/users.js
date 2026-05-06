@@ -88,6 +88,8 @@ export const requestPasswordChange = async (req, res) => {
   pendingChanges.set(req.userId, { newHash, expiresAt: Date.now() + 10 * 60 * 1000 });
 
   const email = decrypt(user.email_encrypted);
+
+  // this email send is behind auth, so the delay of awaiting the email send is not a risk of account enumeration
   await sendEmail(email, 'SoundAdvice password change code', `Your code is: ${code}. It expires in 10 minutes.`);
 
   res.json({ message: 'Code sent' });

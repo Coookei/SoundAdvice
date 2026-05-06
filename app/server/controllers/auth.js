@@ -100,6 +100,9 @@ export const login = async (req, res) => {
     const codeHash = hashCode(code); // hash with HMAC and 2FA secret stored in .env. attacker unable to get 2fa code even if db compromised
 
     await authQueries.setEmailCode(user.id, codeHash, expiresAt);
+
+    // we have already checked the users credentials at this point, so the account cant be enumerated as user has basically logged in
+    // so we can await the email send, as the delay does not matter
     await sendEmail(email, 'Your SoundAdvice login code', `Your code is: ${code}. It expires in 10 minutes.`);
 
     // if user starts 2fa flow but then doesnt complete,  and then logs in again in diff browser, without the previous cookie,
@@ -207,7 +210,12 @@ export const forgotRequest = async (req, res) => {
     await authQueries.setEmailCode(user.id, hashCode(code), expiresAt);
 
     // DO NOT await the email, as otherwise the delay could be used to enumerate accounts
-    sendEmail(email, 'SoundAdvice password reset code', `Your code is: ${code}. It expires in 10 minutes.`);
+    sendEmail(email, 'SoundAdvice password reset code', `Your code is: ${code}. It expires in 10 minutes.`).catch(
+      (err) => {
+        console.error('Failed to send password reset email:', err);
+      }
+    );
+
     await recordEvent(req, AuditEvent.FORGOT_REQUESTED, { actorId: user.id });
   } else {
     await recordEvent(req, AuditEvent.FORGOT_UNKNOWN_EMAIL);
@@ -297,7 +305,10 @@ export const magicLinkRequest = async (req, res) => {
       email,
       'SoundAdvice sign-in method unavailable',
       `This account cannot use magic-link sign in. Please sign in with your password and 2FA verification code instead.`
-    );
+    ).catch((err) => {
+      console.error('Failed to send magic link email:', err);
+    });
+
     await recordEvent(req, AuditEvent.MAGIC_LINK_ADMIN_BLOCKED, { actorId: user.id });
   } else if (user) {
     const token = crypto.randomBytes(32).toString('hex');
@@ -309,7 +320,14 @@ export const magicLinkRequest = async (req, res) => {
     const link = `${process.env.BASE_URL}/sign-in/magic-link/confirm?token=${token}`;
 
     // DO NOT await the email, as otherwise the delay could be used to enumerate accounts
-    sendEmail(email, 'Your SoundAdvice sign-in link', `Click to sign in: ${link}\n\nThis link expires in 10 minutes.`);
+    sendEmail(
+      email,
+      'Your SoundAdvice sign-in link',
+      `Click to sign in: ${link}\n\nThis link expires in 10 minutes.`
+    ).catch((err) => {
+      console.error('Failed to send magic link email:', err);
+    });
+
     await recordEvent(req, AuditEvent.MAGIC_LINK_REQUEST, { actorId: user.id });
   } else {
     await recordEvent(req, AuditEvent.MAGIC_LINK_UNKNOWN_EMAIL);
