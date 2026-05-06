@@ -68,3 +68,16 @@ This is mitigated by:
 
 1. Generic response messages on success and failure
 2. Constant time responses: fake bcrypt compare, remove email delay, and a minimum function response time
+
+### Session Hijacking
+
+Session cookies could be stolen, guessed, or fixated and used to impersonate a logged in user.
+
+This is mitigated by:
+
+1. Long, complex 256 bit random session IDs using crypto.randomBytes, which are infeasible to brute force
+2. Server side session storage so we can instantly revoke on logout, password change, or password reset
+3. Session expiries: 1 hour admin (short as admins privileged), 24 hour user, 10 min pending 2FA
+4. Session regenerated after 2FA to prevent fixation of attacker using a known session ID
+5. Secure cookie flag forces the session cookie to only be sent over HTTPS in production, which blocks network sniffing as HTTPS encrypts all traffic including the cookie itself
+6. XSS and CSRF can also lead to session hijacking, which we have protected against
