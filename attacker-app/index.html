@@ -3,6 +3,10 @@
   <body>
     <button id="me">Request /api/auth/me</button>
     <button id="bio">POST /api/users/bio</button>
+    <button id="xss"> POST XSS test </button>
+    <button id="sql">SQL test </button> 
+    <button id="session"> Session hijacking test </button>
+    <button id="enumeration"> Account enumeration test </button>
 
     <p id="output"></p>
 
@@ -53,6 +57,175 @@
           log(err);
         }
       });
+
+      // XSS test
+      document.getElementById('xss').addEventListener('click', async () => {
+        out.textContent = '';
+
+        // safe test payload
+        const xss_payload = `<img src=x 
+        onerror="document.body.dataset.xss='true'; 
+        console.log('XSS executed')">;`
+
+        try {
+          const res = await fetch(TARGET + '/api/users/bio', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              // invalid token to test CSRF protection
+              'X-CSRF-Token': 'invalid-token',
+            },
+            body: JSON.stringify ({
+              bio: xss_payload,
+            }),
+          }); 
+
+          log('status: ' + res.status);
+          log(await res.text());
+          log('payload sent haha'); 
+        } catch (err) {
+          log('failed to send XSS payload');
+          log(err);
+        }
+      }); 
+
+      // SQL injection test
+      document.getElementById('sql').addEventListener('click', async () => {
+        out.textContent = '';
+
+        const payloads = [
+          "test",
+          "'",
+          "\"",
+          "' OR '1'='1",
+          "\" OR \"1\"=\"1",
+          "' OR 1=1 --",
+          "' AND 1=2 --"
+        ]; 
+
+        for (const payload of payloads) {
+          try {
+            const res = await fetch(TARGET + '/api/users/bio', {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': 'invalid-token',
+              },
+              body: JSON.stringify({
+                bio: payload,
+              }),
+            });
+
+            const text = await res.text(); 
+
+            log('---');
+            log('payload: ' + payload);
+            log('status: ' + res.status);
+            log('response: ' + text.slice(0, 100));
+          } catch(err) {
+            log('---');
+            log('payload: ' + payload);
+            log('error: ' + err.message);
+          }
+        }
+      }); 
+
+      // session hijacking test
+      document.getElementById('session').addEventListener('click', async () => {
+        out.textContent = ''; 
+
+        log('Session hijacking simulation');
+
+        // testing cookie security - are they accessible?
+        log('1) document.cookie:');
+        log(document.cookie || 'empty / httpOnly cookie'); 
+
+        // normal authenticated request using existing session
+        try {
+          const res = await fetch(TARGET + '/api/auth/me', {
+            credentials: 'include',
+          });
+
+          log('---');
+          log('2) Actual session request');
+          log('status: ' + res.status);
+          log(await res.text()); 
+        } catch (err)  {
+          log('request failed: ' + err.message);
+        }
+
+        // simulate stolen session reply - browser ignores cookie header
+        const fakeStolenSession = 'session = FAKE_SESSION_TOKEN'; 
+
+        try {
+          const res = await fetch(TARGET + '/api/auth/me', {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              'X-Debug-Session': fakeStolenSession
+            }
+          }); 
+
+          log('---');
+          log('3) Replay simulation attempt');
+          log('status: ' + res.status);
+          log(await res.text()); 
+        } catch(err) {
+          log('replay failed: ' + err.message); 
+        }
+
+        // cross site cookie protection check
+        log('---');
+        log('4) Cross site proctection note:');
+        log('If cookies are missing here, samesite = Lax (request must be from same site) is working');
+      });
+
+      // account enumeration test
+      document.getElementById('enumeration').addEventListener('click', async () => {
+        out.textContent = '';
+
+        log('Account enumeration test');
+
+        // test inputs (existing vs non existing)
+        const testUsers = [
+          'testuser67@gmail.com',
+          'gracepatrick889@mgmail.com',
+          'testuser69@gmail.com'
+        ]; 
+
+        for (const user of testUsers) {
+          try {
+            const res = await fetch(TARGET + '/api/auth/login', {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify ({
+                email: user,
+                password: 'wr0ngp4ssword1324'
+              }), 
+            }); 
+
+            const text = await res.text();
+            
+            log('---');
+            log('email: ' + user);
+            log('status: ' + res.status);
+            log('response: ' + text.slice(0, 100)); 
+          } catch(err) {
+            log('---');
+            log('email: ' + user);
+            log('error: ' + err.message); 
+          }
+        }
+
+        log('---');
+        log('Check for differences between responses above'); 
+      }); 
+
     </script>
   </body>
 </html>
