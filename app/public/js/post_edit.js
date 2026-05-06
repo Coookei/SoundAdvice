@@ -8,7 +8,7 @@ async function loadPost() {
 
   if (!res.ok) {
     showError('Could not load post.');
-    form.style.display = 'none';
+    form.classList.add('hidden');
     return;
   }
 

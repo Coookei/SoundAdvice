@@ -326,6 +326,17 @@ main button:hover {
   background-color: #f2875c;
 }
 
+main button:disabled {
+  background-color: #d3d3d3;
+  color: #777;
+  border-color: #999;
+  cursor: not-allowed;
+}
+
+main button:disabled:hover {
+  background-color: #d3d3d3;
+}
+
 #postForm {
   text-align: left;
   font-size: 20px;
@@ -473,4 +484,9 @@ legend {
   width: auto;
   padding: 8px 14px;
   white-space: nowrap;
+}
+
+/* used to hide elements via classList instead of inline style attributes (CSP friendly) */
+.hidden {
+  display: none !important;
 }

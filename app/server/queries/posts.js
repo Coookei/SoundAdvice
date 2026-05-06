@@ -10,6 +10,7 @@ export const findAllApproved = async () => {
   return rows;
 };
 
+// find a post by its post id
 export const findById = async (id) => {
   const { rows } = await pool.query(
     `SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, p.image_path AS "imagePath", u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.id = $1`,
@@ -18,6 +19,16 @@ export const findById = async (id) => {
   return rows[0];
 };
 
+// get only approved posts by user ID (for public profile page view)
+export const findByUser = async (userId) => {
+  const { rows } = await pool.query(
+    "SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.user_id = $1 AND p.status = 'approved' ORDER BY p.created_at DESC",
+    [userId]
+  );
+  return rows;
+};
+
+// get ALL posts of all statuses for the current logged in user id
 export const findByUserId = async (userId) => {
   const { rows } = await pool.query(
     `SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, p.image_path AS "imagePath", u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.user_id = $1 ORDER BY p.created_at DESC`,
@@ -26,6 +37,7 @@ export const findByUserId = async (userId) => {
   return rows;
 };
 
+// for admins to get all posts of all status for the admin panel
 export const findAll = async () => {
   const { rows } = await pool.query(
     `SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, p.image_path AS "imagePath", u.username FROM posts p JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC`,
@@ -68,15 +80,6 @@ export const searchApproved = async (query) => {
   const { rows } = await pool.query(
     `SELECT p.id, p.title, p.content, p.created_at, p.image_path AS "imagePath", u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.status = 'approved' AND (p.title ILIKE $1 OR p.content ILIKE $1) ORDER BY p.created_at DESC`,
     [`%${query}%`]
-  );
-  return rows;
-};
-
-// get only approved posts by user ID (for public profile page view)
-export const findByUser = async (userId) => {
-  const { rows } = await pool.query(
-    `SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.image_path AS "imagePath", p.updated_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.user_id = $1 AND p.status = 'approved' ORDER BY p.created_at DESC`,
-    [userId]
   );
   return rows;
 };

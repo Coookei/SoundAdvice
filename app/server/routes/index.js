@@ -4,6 +4,7 @@ import pageRoutes from './pages.js';
 import authRoutes from './auth.js';
 import userRoutes from './users.js';
 import postRoutes from './posts.js';
+import logRoutes from './logs.js';
 
 const indexRouter = Router();
 
@@ -15,6 +16,7 @@ const api = Router();
 api.use('/auth', authRoutes);
 api.use('/users', userRoutes);
 api.use('/posts', postRoutes);
+api.use('/logs', logRoutes);
 
 // API error handling
 api.use(notFoundHandler);

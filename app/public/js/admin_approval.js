@@ -88,8 +88,8 @@ function applyFilter() {
 
   const articles = document.querySelectorAll('#pendingPosts article');
   articles.forEach((article) => {
-    // only show posts IF it has the data status that matches CURRENT FILTER otherwise its display: none
-    article.style.display = article.dataset.status === filter ? '' : 'none';
+    // only show posts IF it has the data status that matches CURRENT FILTER, otherwise hide
+    article.classList.toggle('hidden', article.dataset.status !== filter);
   });
 }
 
