@@ -249,17 +249,23 @@ export const forgotVerify = async (req, res) => {
 
   const { email, code } = check.value;
 
+  const startedAt = Date.now(); // record start time to prevent timings based account enumeration
+  const minimumDelayMs = 1000; // 1 second
+
   const user = await authQueries.findByEmail(email);
   const stored = user ? await authQueries.getEmailCode(user.id) : null;
 
   if (!user || !stored?.email_code || new Date() > new Date(stored.email_code_expires)) {
+    await waitUntilMinimum(startedAt, minimumDelayMs); // unknown email + random code, same response timings
     return res.status(400).json({ error: 'Invalid or expired code' });
   }
 
   const submitted = Buffer.from(hashCode(code), 'hex');
   const storedBuf = Buffer.from(stored.email_code, 'hex');
+
   if (submitted.length !== storedBuf.length || !crypto.timingSafeEqual(submitted, storedBuf)) {
     await recordEvent(req, AuditEvent.FORGOT_BAD_CODE, { actorId: user.id });
+    await waitUntilMinimum(startedAt, minimumDelayMs); // known email + random code, same response timings
     return res.status(400).json({ error: 'Invalid or expired code' });
   }
 
@@ -268,6 +274,7 @@ export const forgotVerify = async (req, res) => {
   await authQueries.setResetToken(user.id, token, expiresAt);
   await authQueries.clearEmailCode(user.id);
 
+  // user gave correct email + correct code, so account existence is not secret, so no need to delay response.
   res.json({ token });
 };
 
