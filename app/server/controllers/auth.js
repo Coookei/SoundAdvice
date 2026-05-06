@@ -210,6 +210,9 @@ export const forgotRequest = async (req, res) => {
 
   const email = check.value;
 
+  const startedAt = Date.now(); // record start time to prevent timing based account enumeration
+  const minimumDelayMs = 1000; // 1 second
+
   const user = await authQueries.findByEmail(email);
 
   if (user) {
@@ -229,7 +232,8 @@ export const forgotRequest = async (req, res) => {
     await recordEvent(req, AuditEvent.FORGOT_UNKNOWN_EMAIL);
   }
 
-  res.json({ message: 'If that email is registered, a code has been sent.' });
+  await waitUntilMinimum(startedAt, minimumDelayMs); // wait a minimum time to prevent timing based account enumeration
+  res.json({ message: 'If that email is registered, a code has been sent.' }); // always respond same way to prevent account enumeration
 };
 
 // step 2: verify the code and issue a short-lived reset token. this token proves the user
