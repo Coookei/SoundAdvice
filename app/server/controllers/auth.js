@@ -47,6 +47,11 @@ export const register = async (req, res) => {
     return res.status(400).json({ error: 'Incorrect captcha, try again' });
   }
 
+  // record start time so that we can ensure registration attempts will always take at least 1 second,
+  // this is to prevent timings based account enumeration from differences in database and logging times
+  const startedAt = Date.now();
+  const minimumDelayMs = 1000; // 1 second
+
   // hash password with shared pepper, bcrypt generates unique salt
   // for each password hash with cost factor 12
   const hashed = await bcrypt.hash(password + process.env.PEPPER, 12);
@@ -61,12 +66,15 @@ export const register = async (req, res) => {
       await recordEvent(req, AuditEvent.REGISTER_DUPLICATE, {
         detail: err.constraint?.includes('email') ? 'email' : 'username',
       });
-      return res.json({ message: 'Registration successful' });
+
+      await waitUntilMinimum(startedAt, minimumDelayMs); // ensure registration always takes at least 1 second to prevent timings based account enumeration
+      return res.json({ message: 'Registration successful' }); // always response same message to prevent account enumeration
     }
     throw err;
   }
 
-  res.json({ message: 'Registration successful' });
+  await waitUntilMinimum(startedAt, minimumDelayMs); // ensure registration always takes at least 1 second to prevent timings based account enumeration
+  res.json({ message: 'Registration successful' }); // always response same message to prevent account enumeration
 };
 
 export const login = async (req, res) => {
@@ -367,4 +375,20 @@ export const magicLinkVerify = async (req, res) => {
   await recordEvent(req, AuditEvent.MAGIC_LINK_LOGIN, { actorId: user.id });
 
   res.json({ message: 'Signed in', redirect: '/' });
+};
+
+// helper function used to prevent timing based account enumeration,
+// to always make response times take a minimum amount of time
+const waitUntilMinimum = async (startedAt, minimumMs) => {
+  const duration = Date.now() - startedAt; // calculate how much time passed since request started
+  const remaining = minimumMs - duration; // calculate how long to wait until we reach min response time
+
+  // if we already passed the minimum time, return now
+  if (remaining <= 0) {
+    return;
+  }
+
+  // this simply creates a promise that waits for the remaining time before resolving
+  // and we wait for it here, as it is awaited
+  await new Promise((resolve) => setTimeout(resolve, remaining));
 };
