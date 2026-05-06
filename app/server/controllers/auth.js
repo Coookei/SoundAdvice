@@ -18,8 +18,8 @@ import {
   requireString,
 } from '../lib/validate.js';
 
-// pre computed hash so we can run bcrypt.compare even when user doesn't exist - prevents timing-based account enumeration
-const FAKE_HASH = await bcrypt.hash('fake-password-for-timing', 12);
+// pre computed hash so we can run bcrypt.compare even when user doesnt exist. this prevents timing based account enumeration
+const FAKE_HASH = await bcrypt.hash('fake-password-for-timing' + process.env.PEPPER, 12);
 
 export const getCaptcha = (_req, res) => {
   const { token, scrambled } = generateCaptcha();
@@ -94,12 +94,14 @@ export const login = async (req, res) => {
   // always run bcrypt compare to prevent timing attacks
   const valid = user
     ? await bcrypt.compare(password + process.env.PEPPER, user.password)
-    : await bcrypt.compare(password, FAKE_HASH);
+    : await bcrypt.compare(password + process.env.PEPPER, FAKE_HASH);
 
   if (!user || !valid) {
     await recordEvent(req, AuditEvent.LOGIN_FAIL, { detail: user ? 'wrong password' : 'unknown email' });
-    return res.status(401).json({ error: 'Invalid email or password' });
+    return res.status(401).json({ error: 'Invalid email or password' }); // generic message to prevent account enumeration
   }
+
+  // by this point we have a valid user and correct password, so the bycrypt compare is enough to prevent timing based account enumeration
 
   // admin accounts require 2FA, regular users log in directly
   if (user.is_admin) {
