@@ -57,3 +57,14 @@ pnpm start    # start production server
 ## Database Migrations
 
 To make and keep track of changes to the database, create a new SQL file in the db/ directory, incrementing the numbered prefix in the filename. E.g. 01_init.sql, 02_add_phone_to_users.sql. The file can then be ran to update the database.
+
+## Security Vulnerabilities Mitigated
+
+### Account Enumeration
+
+The register, login, forgot password request, forgot password verify, and magic link request endpoints could all be used to check for existence of an account.
+
+This is mitigated by:
+
+1. Generic response messages on success and failure
+2. Constant time responses: fake bcrypt compare, remove email delay, and a minimum function response time
