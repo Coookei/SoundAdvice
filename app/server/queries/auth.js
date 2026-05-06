@@ -64,3 +64,23 @@ export const getPasswordAndEmail = async (userId) => {
   const { rows } = await pool.query('SELECT password, email_encrypted FROM users WHERE id = $1', [userId]);
   return rows[0];
 };
+
+export const setMagicLinkToken = async (userId, tokenHash, expiresAt) => {
+  await pool.query('UPDATE users SET magic_link_token = $1, magic_link_expires = $2 WHERE id = $3', [
+    tokenHash,
+    expiresAt,
+    userId,
+  ]);
+};
+
+export const consumeMagicLinkToken = async (tokenHash) => {
+  // return and clear the token in one query to prevent race conditions.
+  // if token expired, no rows returned, so user cant login. The expired token will eventually be overritten by a future request, so no need to clear expired tokens here.
+  const { rows } = await pool.query(
+    `UPDATE users SET magic_link_token = NULL, magic_link_expires = NULL
+     WHERE magic_link_token = $1 AND magic_link_expires > NOW()
+     RETURNING id, is_admin`,
+    [tokenHash]
+  );
+  return rows[0];
+};

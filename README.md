@@ -1,6 +1,10 @@
 # SoundAdvice
 
-A secure web-based blog built with Node.js, Express and PostgreSQL.
+SoundAdvice is a secure music help blog for motivated individuals who wish to improve in their musical abilities and so ask for help from others. Therefore, we have implemented guardrails to prevent low quality or spam posts from being surfaced: new posts must be approved by an admin user before they become public.
+
+## Technology
+
+Built with Node.js, Express and PostgreSQL.
 
 ## Structure
 
@@ -9,7 +13,7 @@ app/
  public/     # static assets rendered on client (html, css, js, images)
  server/     # server-side code
 db/          # SQL migration files
-logs/        # logs such as for auth, posting and comment events
+logs/        # mirrors the audit_log database table as a second source of truth
 test/        # unit tests, mirroring the app/ folder structure
 uploads/     # user profile pictures
 attacker-app/# verify CSRF and cross-origin protections

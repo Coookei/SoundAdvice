@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Sound Advice - Magic Link Sign In</title>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <script src="/js/magic_link.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/"><img id="logo" src="/images/logo.png" /></a>
+      <h1>Sign in with a magic link</h1>
+    </header>
+    <main>
+      <p>Enter your email and we'll send you a one time sign in link.</p>
+
+      <form id="magic_link_form">
+        <label for="email_input">Email:</label>
+        <input type="email" id="email_input" name="email_input" placeholder="Please enter your email..." />
+
+        <button id="send_link_btn" type="submit">Send Link</button>
+      </form>
+
+      <p><a href="/sign-in">Back to sign in</a></p>
+    </main>
+  </body>
+</html>

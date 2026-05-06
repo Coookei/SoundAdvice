@@ -123,7 +123,7 @@ describe('Testing createPost', () => {
     await createPost(req, res);
 
     expect(res.statusCode).to.equal(400);
-    expect(res.body.error).to.equal('Title and content are required');
+    expect(res.body.error).to.equal('Title is required');
   });
 
   it('should return 400 if content is missing', async () => {
@@ -357,7 +357,7 @@ describe('Testing updatePostStatus', () => {
     await updatePostStatus(req, res);
 
     expect(res.statusCode).to.equal(400);
-    expect(res.body.error).to.equal('Status must be approved or rejected');
+    expect(res.body.error).to.equal('Status must be one of: approved, rejected');
   });
 
   it('should update the post status', async () => {

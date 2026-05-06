@@ -1,17 +1,23 @@
 import * as postQueries from '../queries/posts.js';
 import * as userQueries from '../queries/users.js';
-import { logPostEvent } from '../lib/log.js';
+import { recordEvent, AuditEvent } from '../lib/audit.js';
 import { sanitiseHtml } from '../lib/sanitize.js';
+import { validate, requireString, requirePositiveInt, requireOneOf } from '../lib/validate.js';
 
-// get all approved posts
+// get all approved posts, used for the homepage
 export const getPosts = async (req, res) => {
   const posts = await postQueries.findAllApproved();
   res.json({ posts });
 };
 
-// get single approved post by its ID
+// get single approved post by its id
 export const getPostById = async (req, res) => {
-  const { id } = req.params;
+  const check = validate(() => requirePositiveInt(req.params.id, 'post id'));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
+  }
+
+  const id = check.value;
   const post = await postQueries.findById(id);
 
   if (!post) return res.status(404).json({ error: 'Post not found' });
@@ -30,19 +36,41 @@ export const getPostById = async (req, res) => {
   res.json({ post });
 };
 
-// get all posts by user ID (for profile page)
+// get all APPROVED public posts by user Id (for profile page)
+// profile page is currently viewable just for logged in user, so could remove this endpoint and just call getMyPosts
 export const getPostByUser = async (req, res) => {
-  const { userId } = req.params;
+  const check = validate(() => requirePositiveInt(req.params.userId, 'user id'));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
+  }
+
+  const userId = check.value;
   const posts = await postQueries.findByUser(userId);
   res.json({ posts });
 };
 
-export const createPost = async (req, res) => {
-  const { title, content } = req.body;
+// get ALL posts of all statuses for the current logged in user
+export const getMyPosts = async (req, res) => {
+  const posts = await postQueries.findByUserId(req.userId);
+  res.json({ posts });
+};
 
-  if (!title || !content) {
-    return res.status(400).json({ error: 'Title and content are required' });
+// get all posts no matter the status, used for the admin panel
+export const getAdminPosts = async (req, res) => {
+  const posts = await postQueries.findAll();
+  res.json({ posts });
+};
+
+export const createPost = async (req, res) => {
+  const check = validate(() => ({
+    title: requireString(req.body.title, 'Title', { min: 1, max: 200, trim: true }),
+    content: requireString(req.body.content, 'Content', { min: 1, max: 20000, trim: true }),
+  }));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
   }
+
+  const { title, content } = check.value;
 
   // sanitise on write so stored content can only contain whitelisted tags
   const safeTitle = sanitiseHtml(title);
@@ -50,13 +78,17 @@ export const createPost = async (req, res) => {
 
   // create new post with authd users id, default status is pending
   const post = await postQueries.create(req.userId, safeTitle, safeContent);
-  logPostEvent('post_created', { userId: req.userId, postId: post.id });
+  await recordEvent(req, AuditEvent.POST_CREATED, { actorId: req.userId, postId: post.id });
   res.status(201).json({ post });
 };
 
 export const updatePost = async (req, res) => {
-  const { id } = req.params;
-  const { title, content } = req.body;
+  // validate post id first, then run ownership/status checks before validating the body, to prevent probing existence
+  const idCheck = validate(() => requirePositiveInt(req.params.id, 'post id'));
+  if (!idCheck.ok) {
+    return res.status(400).json({ error: idCheck.error });
+  }
+  const id = idCheck.value;
 
   const post = await postQueries.findById(id);
   if (!post) return res.status(404).json({ error: 'Post not found' });
@@ -71,9 +103,15 @@ export const updatePost = async (req, res) => {
     return res.status(403).json({ error: 'Rejected posts cannot be edited' });
   }
 
-  if (!title || !content) {
-    return res.status(400).json({ error: 'Title and content are required' });
+  const bodyCheck = validate(() => ({
+    title: requireString(req.body.title, 'Title', { min: 1, max: 200, trim: true }),
+    content: requireString(req.body.content, 'Content', { min: 1, max: 20000, trim: true }),
+  }));
+  if (!bodyCheck.ok) {
+    return res.status(400).json({ error: bodyCheck.error });
   }
+
+  const { title, content } = bodyCheck.value;
 
   const safeTitle = sanitiseHtml(title);
   const safeContent = sanitiseHtml(content);
@@ -81,16 +119,21 @@ export const updatePost = async (req, res) => {
   // if an admin updates post, LEAVE state as it, i.e. if approved STAYS approved
   // whereas if user updates post goes back to pending status
   const updated = await postQueries.update(id, safeTitle, safeContent, isAdmin ? post.status : 'pending');
-  logPostEvent('post_updated', {
-    userId: req.userId,
+  await recordEvent(req, AuditEvent.POST_UPDATED, {
+    actorId: req.userId,
     postId: post.id,
-    detail: isAdmin && !isAuthor ? 'admin edit' : 'author edit, status reset to pending',
+    detail: isAdmin && !isAuthor ? 'admin edit' : 'author edit',
   });
   res.json({ post: updated });
 };
 
 export const deletePost = async (req, res) => {
-  const { id } = req.params;
+  const check = validate(() => requirePositiveInt(req.params.id, 'post id'));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
+  }
+
+  const id = check.value;
 
   const post = await postQueries.findById(id);
   if (!post) return res.status(404).json({ error: 'Post not found' });
@@ -102,51 +145,46 @@ export const deletePost = async (req, res) => {
   if (!isAuthor && !isAdmin) return res.status(404).json({ error: 'Post not found' }); // hide post existence so instead of 403 forbidden, return 404
 
   await postQueries.remove(id);
-  logPostEvent('post_deleted', {
-    userId: req.userId,
+  await recordEvent(req, AuditEvent.POST_DELETED, {
+    actorId: req.userId,
     postId: post.id,
     detail: isAdmin && !isAuthor ? 'admin delete' : 'author delete',
   });
   res.json({ message: 'Post deleted' });
 };
 
-export const getMyPosts = async (req, res) => {
-  const posts = await postQueries.findByUserId(req.userId);
-  res.json({ posts });
-};
-
-export const getAdminPosts = async (req, res) => {
-  const posts = await postQueries.findAll();
-  res.json({ posts });
-};
-
 export const updatePostStatus = async (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-
-  if (status !== 'approved' && status !== 'rejected') {
-    return res.status(400).json({ error: 'Status must be approved or rejected' });
+  const check = validate(() => ({
+    id: requirePositiveInt(req.params.id, 'post id'),
+    status: requireOneOf(req.body?.status, ['approved', 'rejected'], 'Status'),
+  }));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
   }
+
+  const { id, status } = check.value;
 
   const post = await postQueries.findById(id);
   if (!post) return res.status(404).json({ error: 'Post not found' });
 
   // admins can update post status to approved or rejected only
   const updated = await postQueries.updateStatus(id, status);
-  logPostEvent('post_status_changed', { userId: req.userId, postId: post.id, detail: status });
+  await recordEvent(req, AuditEvent.POST_STATUS_CHANGED, {
+    actorId: req.userId,
+    postId: post.id,
+    detail: `${post.status} to ${status}`,
+  });
   res.json({ post: updated });
 };
 
 export const searchPosts = async (req, res) => {
   // we encoded the query in URL on search page using encodeURIComponent(), but Express decodes params itself, so dont need to manually here
-  const { q } = req.query;
-
-  // if no query or query is empty after removing whitespace, 400
-  if (!q || !q.trim()) {
-    return res.status(400).json({ error: 'Query is required' });
+  const check = validate(() => requireString(req.query.q, 'Query', { min: 1, max: 100, trim: true })); // limit q to 100 to prevent huge ILIKE queries that can be slow
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
   }
 
-  const query = q.trim();
+  const query = check.value;
 
   const posts = await postQueries.searchApproved(query);
   res.json({ posts });

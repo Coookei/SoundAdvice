@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Sound Advice Admin</title>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <!-- hash set to font-awesome 4.7.0 so if CDN file ever modified, it wont be loaded -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+      integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN"
+      crossorigin="anonymous"
+    />
+    <script src="/js/admin_logs.js" defer></script>
+    <script src="/js/shared.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/"><img id="logo" src="/images/logo.png" /></a>
+      <h1>Admin Dashboard</h1>
+      <a id="login_btn" class="hidden" href="/sign-in">Log in</a>
+      <div class="dropdown hidden" id="user_dropdown">
+        <button id="login_link">Username <i class="fa fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="/profile">Profile</a>
+          <a class="hidden" href="/admin/approval" id="admin_panel_link">Admin Panel</a>
+          <a id="logout_btn">Log out</a>
+        </div>
+      </div>
+    </header>
+
+    <nav>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/admin/approval">Post Approval</a></li>
+        <li><a href="/admin/users">User Management</a></li>
+        <li class="active"><a href="/admin/logs">Audit Logs</a></li>
+      </ul>
+    </nav>
+
+    <main>
+      <section id="logsSection">
+        <h2>Audit Logs</h2>
+        <p>All authentication, post, and comment events are shown here.</p>
+
+        <div id="logFilters">
+          <label>
+            Event type
+            <select id="filterEventType">
+              <option value="">All</option>
+            </select>
+          </label>
+          <label>
+            Actor ID
+            <input id="filterActorId" type="number" min="1" />
+          </label>
+          <label>
+            From
+            <input id="filterFrom" type="datetime-local" />
+          </label>
+          <label>
+            To
+            <input id="filterTo" type="datetime-local" />
+          </label>
+          <button id="applyFilters" class="link_btn">Apply</button>
+          <button id="clearFilters" class="link_btn">Clear</button>
+          <button id="verifyButton" class="link_btn">Verify Integrity</button>
+        </div>
+
+        <p id="verifyResult"></p>
+
+        <table id="logsTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>When</th>
+              <th>Event</th>
+              <th>Actor</th>
+              <th>IP</th>
+              <th>Detail</th>
+              <th>Post</th>
+              <th>Comment</th>
+            </tr>
+          </thead>
+          <tbody id="logsBody"></tbody>
+        </table>
+
+        <div id="pagination">
+          <button id="prevPage" class="link_btn">Previous</button>
+          <span id="pageLabel">Page 1</span>
+          <button id="nextPage" class="link_btn">Next</button>
+        </div>
+      </section>
+    </main>
+    <footer></footer>
+  </body>
+</html>

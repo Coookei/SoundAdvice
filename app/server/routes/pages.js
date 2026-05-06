@@ -37,6 +37,8 @@ router.get('/sign-in/2fa', redirectIfNotPending, sendPage('signin_2fa.html'));
 router.get('/forgot-password', redirectIfAuthed, sendPage('forgot_password.html'));
 router.get('/forgot-password/code', redirectIfAuthed, sendPage('forgot_password_code.html'));
 router.get('/forgot-password/reset', redirectIfAuthed, sendPage('forgot_password_reset.html'));
+router.get('/sign-in/magic-link', redirectIfAuthed, sendPage('magic_link.html'));
+router.get('/sign-in/magic-link/confirm', redirectIfAuthed, sendPage('magic_link_confirm.html'));
 router.get('/my-posts', redirectIfGuest, sendPage('my_posts.html')); // protected
 router.get('/profile', redirectIfGuest, sendPage('profile.html')); // protected
 router.get('/post/new', redirectIfGuest, sendPage('post_new.html')); // protected
@@ -45,5 +47,6 @@ router.get('/post/:id', sendPage('post_details.html')); // public
 router.get('/post/:id/edit', redirectIfGuest, sendPage('post_edit.html')); // protected
 router.get('/admin/approval', redirectIfNotAdmin, sendPage('admin_approval.html')); // admin only
 router.get('/admin/users', redirectIfNotAdmin, sendPage('admin_users.html')); // admin only
+router.get('/admin/logs', redirectIfNotAdmin, sendPage('admin_logs.html')); // admin only
 
 export default router;

@@ -5,11 +5,12 @@ import path from 'path';
 import { decrypt, hashCode } from '../lib/crypto.js';
 import { sendEmail } from '../lib/email.js';
 import { parseFileUpload } from '../lib/upload.js';
+import { validate, requireString, requirePassword, requireDigitCode, requirePositiveInt } from '../lib/validate.js';
 import * as authQueries from '../queries/auth.js';
 import * as sessionQueries from '../queries/sessions.js';
 import * as userQueries from '../queries/users.js';
 
-// hold the new password hash in memory until the email code is verified - avoids adding a DB column for a short-lived value
+// hold the new password hash in memory until the email code is verified, avoids adding a DB column for a short lived value
 const pendingChanges = new Map();
 
 setInterval(
@@ -28,9 +29,15 @@ export const getUsers = async (req, res) => {
   res.json({ users });
 };
 
-// get user by their profile ID
+// get user by their user ID
 export const getUserById = async (req, res) => {
-  const { id } = req.params;
+  // apply server side validation
+  const check = validate(() => requirePositiveInt(req.params.id, 'user id'));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
+  }
+
+  const id = check.value; // we have cleaned and validated input here
 
   const user = await userQueries.findById(id);
 
@@ -39,19 +46,14 @@ export const getUserById = async (req, res) => {
   res.json({ user });
 };
 
-// update bio
+// update a users own bio
 export const updateBio = async (req, res) => {
-  let { bio } = req.body;
-
-  if (typeof bio !== 'string') {
-    return res.status(400).json({ error: 'Invalid bio type' });
+  const check = validate(() => requireString(req.body.bio, 'Bio', { max: 2000, trim: true }));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
   }
 
-  bio = bio.trim();
-
-  if (bio.length > 500) {
-    return res.status(400).json({ error: 'Bio must be 500 characters or less' });
-  }
+  const bio = check.value;
 
   await userQueries.updateBio(req.userId, bio);
 
@@ -60,11 +62,15 @@ export const updateBio = async (req, res) => {
 
 // step 1 of password change: verify current password, email a code, stash new hash
 export const requestPasswordChange = async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-
-  if (!currentPassword || !newPassword) {
-    return res.status(400).json({ error: 'Current and new password are required' });
+  const check = validate(() => ({
+    currentPassword: requirePassword(req.body.currentPassword),
+    newPassword: requirePassword(req.body.newPassword),
+  }));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
   }
+
+  const { currentPassword, newPassword } = check.value;
 
   const user = await authQueries.getPasswordAndEmail(req.userId);
   const valid = await bcrypt.compare(currentPassword + process.env.PEPPER, user.password);
@@ -89,11 +95,12 @@ export const requestPasswordChange = async (req, res) => {
 
 // step 2: verify code, apply new password, invalidate every other session for this user
 export const confirmPasswordChange = async (req, res) => {
-  const { code } = req.body;
-
-  if (!code) {
-    return res.status(400).json({ error: 'Code is required' });
+  const check = validate(() => requireDigitCode(req.body.code, 6));
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
   }
+
+  const code = check.value;
 
   const pending = pendingChanges.get(req.userId);
   const stored = await authQueries.getEmailCode(req.userId);
@@ -104,7 +111,7 @@ export const confirmPasswordChange = async (req, res) => {
     return res.status(400).json({ error: 'Code expired, please try again' });
   }
 
-  const submitted = Buffer.from(hashCode(code.toString()), 'hex');
+  const submitted = Buffer.from(hashCode(code), 'hex');
   const storedBuf = Buffer.from(stored.email_code, 'hex');
   if (submitted.length !== storedBuf.length || !crypto.timingSafeEqual(submitted, storedBuf)) {
     return res.status(400).json({ error: 'Invalid code' });
@@ -120,8 +127,7 @@ export const confirmPasswordChange = async (req, res) => {
   res.json({ message: 'Password updated' });
 };
 
-// update profile picture - stores file on disk, path in DB
-// rate limiting handled by route middleware
+// update profile picture, stores file on disk in /uploads, path to file stored in DB
 export const updateProfilePicture = async (req, res) => {
   try {
     const { fileBuffer, fileExt } = await parseFileUpload(req);
@@ -131,7 +137,7 @@ export const updateProfilePicture = async (req, res) => {
       return res.status(400).json({ error: 'Only PNG allowed' });
     }
 
-    // generated filename, not user-controlled
+    // generated filename, not user controlled
     const fileName = `user-pfp_${req.userId}_${Date.now()}.png`;
     const uploadPath = path.join('uploads', fileName);
 
@@ -145,7 +151,7 @@ export const updateProfilePicture = async (req, res) => {
       try {
         await fs.promises.unlink(`.${oldPicture}`);
       } catch {
-        // ignore - old file might already be gone
+        // ignore as old file might already be gone
       }
     }
 

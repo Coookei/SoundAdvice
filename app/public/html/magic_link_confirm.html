@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Sound Advice - Confirm Sign In</title>
+    <meta charset="utf-8" />
+
+    <!-- if user on this page with token in the URL, and went to another site, then the referer header will NOT be set so DOESNT contain the token -->
+    <meta name="referrer" content="no-referrer" />
+
+    <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <script src="/js/magic_link_confirm.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/"><img id="logo" src="/images/logo.png" /></a>
+      <h1>Confirm sign in</h1>
+    </header>
+    <main>
+      <p>Click the button below to finish signing in.</p>
+
+      <form id="confirm_form">
+        <button id="continue_btn" type="submit">Continue</button>
+      </form>
+
+      <p><a href="/sign-in/magic-link">Request a new link</a></p>
+    </main>
+  </body>
+</html>

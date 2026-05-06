@@ -144,7 +144,7 @@ describe('Testing createComment', () => {
     await createComment(req, res);
 
     expect(res.statusCode).to.equal(400);
-    expect(res.body.error).to.equal('Comment must be under 2000 characters');
+    expect(res.body.error).to.equal('Comment must be 2000 characters or less');
   });
 
   it('should return 404 if post doesnt exist', async () => {
