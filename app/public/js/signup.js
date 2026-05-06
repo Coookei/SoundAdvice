@@ -1,4 +1,5 @@
 const form = document.getElementById('signup_form');
+const btn = document.getElementById('signup_btn');
 let captchaToken = null;
 
 // fetch a captcha on page load
@@ -38,6 +39,9 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
+  btn.disabled = true;
+  btn.textContent = 'Loading...';
+
   const res = await fetch('/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -49,6 +53,8 @@ form.addEventListener('submit', async (e) => {
   if (res.ok) {
     window.location.href = '/sign-in';
   } else {
+    btn.disabled = false;
+    btn.textContent = 'Sign up';
     showError(data.error || 'Something went wrong');
     loadCaptcha(); // refresh captcha on failure
   }

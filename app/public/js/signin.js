@@ -1,4 +1,5 @@
 const form = document.getElementById('login_form');
+const btn = document.getElementById('login_btn');
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -14,6 +15,9 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
+  btn.disabled = true;
+  btn.textContent = 'Loading...';
+
   const res = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -25,6 +29,8 @@ form.addEventListener('submit', async (e) => {
   if (res.ok && data.redirect) {
     window.location.href = data.redirect;
   } else {
+    btn.disabled = false;
+    btn.textContent = 'Log in';
     showError(data.error || 'Something went wrong');
   }
 });

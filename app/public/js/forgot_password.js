@@ -1,4 +1,5 @@
 const form = document.getElementById('forgot_form');
+const btn = document.getElementById('send_code_btn');
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -13,6 +14,9 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
+  btn.disabled = true;
+  btn.textContent = 'Loading...';
+
   const res = await fetch('/api/auth/forgot-password/request', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -25,6 +29,8 @@ form.addEventListener('submit', async (e) => {
     sessionStorage.setItem('forgot_email', email);
     window.location.href = '/forgot-password/code';
   } else {
+    btn.disabled = false;
+    btn.textContent = 'Send Code';
     showError(data.error || 'Something went wrong');
   }
 });
