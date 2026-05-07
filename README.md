@@ -64,6 +64,7 @@ To make and keep track of changes to the database, create a new SQL file in the 
 - show loading state: disable buttons and change text to loading so users never left waiting
 - middleware redirection: if not signed in, sent to sign in; if signed in, redirected from auth pages
 - show success messages: show useful messages even after being redireced across pages, for example after signing in
+- pending post flow: clear note when creating or editing posts that they will go into a pending process, and visually distinct UI for pending and rejected posts
 
 ## Infrastructure Protection
 
