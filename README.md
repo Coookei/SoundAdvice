@@ -58,6 +58,18 @@ pnpm start    # start production server
 
 To make and keep track of changes to the database, create a new SQL file in the db/ directory, incrementing the numbered prefix in the filename. E.g. 01_init.sql, 02_add_phone_to_users.sql. The file can then be ran to update the database.
 
+## Blog Usability Features
+
+- show error messages: failed client side validation, and rate limiting
+- show loading state: disable buttons and change text to loading so users never left waiting
+- middleware redirection: if not signed in, sent to sign in; if signed in, redirected from auth pages
+- show success messages: show useful messages even after being redireced across pages, for example after signing in
+
+## Infrastructure Protection
+
+- Use HTTPS certificate to encrypt traffic
+- Firewall the server and the database with an application firewall like WAF
+
 ## Security Vulnerabilities Mitigated
 
 ### Account Enumeration
