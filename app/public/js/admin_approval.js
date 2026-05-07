@@ -64,7 +64,7 @@ async function loadPosts() {
 
       const rejectButton = document.createElement('button');
       rejectButton.textContent = 'Reject';
-      rejectButton.classList.add('link_btn');
+      rejectButton.classList.add('link_btn', 'delete_btn');
       rejectButton.addEventListener('click', async () => {
         const res = await csrfFetch('/api/posts/' + post.id + '/status', {
           method: 'PATCH',
