@@ -273,7 +273,7 @@ export const forgotVerify = async (req, res) => {
 
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-  await authQueries.setResetToken(user.id, token, expiresAt);
+  await authQueries.setResetToken(user.id, hashCode(token), expiresAt);
   await authQueries.clearEmailCode(user.id);
 
   // user gave correct email + correct code, so account existence is not secret, so no need to delay response.
@@ -293,7 +293,7 @@ export const forgotReset = async (req, res) => {
 
   const { token, newPassword } = check.value;
 
-  const user = await authQueries.findByResetToken(token);
+  const user = await authQueries.findByResetToken(hashCode(token));
   if (!user || new Date() > new Date(user.password_reset_expires)) {
     return res.status(400).json({ error: 'Invalid or expired reset link' });
   }
