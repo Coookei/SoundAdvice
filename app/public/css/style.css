@@ -557,3 +557,21 @@ legend {
   padding: 10px;
   font-weight: bold;
 }
+
+/* align the filter horizontally */
+#logFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#logFilters label {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+#logFilters input,
+select {
+  width: 180px;
+}
