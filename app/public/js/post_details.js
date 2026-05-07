@@ -55,6 +55,7 @@ async function loadPost() {
     const data = await deleteRes.json();
 
     if (deleteRes.ok) {
+      setSuccessMessage('Post deleted.');
       window.location.href = '/';
     } else {
       showError(data.error || 'Something went wrong');

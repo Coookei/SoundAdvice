@@ -111,6 +111,7 @@ document.getElementById('upload_pfp_btn').addEventListener('click', async () => 
 
   // reload page if upload reflects profile picture
   if (res.ok) {
+    setSuccessMessage('Profile picture updated.');
     location.reload();
   } else {
     alert('Failed to upload profile picture');
@@ -131,8 +132,10 @@ document.getElementById('save_bio_btn').addEventListener('click', async () => {
   });
 
   // reload page if bio upload successful
-  if (res.ok) location.reload();
-  else alert('Failed to update bio');
+  if (res.ok) {
+    setSuccessMessage('Bio updated.');
+    location.reload();
+  } else alert('Failed to update bio');
 });
 
 // password change - step 1: send email code
@@ -174,7 +177,7 @@ document.getElementById('confirm_password_btn').addEventListener('click', async 
   const data = await res.json();
 
   if (res.ok) {
-    alert('Password updated. Other devices have been logged out.');
+    setSuccessMessage('Password updated. Other sessions have been signed out.');
     location.reload();
   } else {
     alert(data.error || 'Failed to update password');

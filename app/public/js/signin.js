@@ -27,6 +27,13 @@ form.addEventListener('submit', async (e) => {
   const data = await res.json();
 
   if (res.ok && data.redirect) {
+    if (data.redirect === '/sign-in/2fa') {
+      // admins are sent to the 2fa page
+      setSuccessMessage('Enter the code we just emailed you.');
+    } else {
+      // everyone else goes to home page
+      setSuccessMessage('Welcome back!');
+    }
     window.location.href = data.redirect;
   } else {
     btn.disabled = false;

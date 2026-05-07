@@ -51,6 +51,7 @@ form.addEventListener('submit', async (e) => {
   const data = await res.json();
 
   if (res.ok) {
+    setSuccessMessage('Account created. Please sign in.');
     window.location.href = '/sign-in';
   } else {
     btn.disabled = false;

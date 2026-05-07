@@ -33,6 +33,7 @@ form.addEventListener('submit', async (e) => {
   if (res.ok) {
     sessionStorage.setItem('forgot_token', data.token);
     sessionStorage.removeItem('forgot_email');
+    setSuccessMessage('Code verified. Set a new password.');
     window.location.href = '/forgot-password/reset';
   } else {
     btn.disabled = false;

@@ -27,6 +27,7 @@ form.addEventListener('submit', async (e) => {
 
   if (res.ok) {
     sessionStorage.setItem('forgot_email', email);
+    setSuccessMessage('If that email is registered, a code has been sent.');
     window.location.href = '/forgot-password/code';
   } else {
     btn.disabled = false;

@@ -45,6 +45,7 @@ form.addEventListener('submit', async (e) => {
   const data = await res.json();
 
   if (res.ok) {
+    setSuccessMessage('Post updated. It has been resubmitted for approval.');
     window.location.href = '/post/' + postId;
   } else {
     showError(data.error || 'Something went wrong');
