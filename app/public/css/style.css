@@ -509,6 +509,17 @@ legend {
   padding: 20px;
 }
 
+/* always render the profile pic as a nice set size in a cirlce */
+.profile-pic {
+  display: block;
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #2e7d32;
+  margin: 10px auto;
+}
+
 .profile-header h2,
 .profile-edit h3,
 .profile-posts h3 {
