@@ -65,6 +65,7 @@ To make and keep track of changes to the database, create a new SQL file in the 
 - middleware redirection: if not signed in, sent to sign in; if signed in, redirected from auth pages
 - show success messages: show useful messages even after being redireced across pages, for example after signing in
 - pending post flow: clear note when creating or editing posts that they will go into a pending process, and visually distinct UI for pending and rejected posts
+- usability: different colour buttons for different actions eg edit/delete post
 
 ## Infrastructure Protection
 

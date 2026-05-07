@@ -42,7 +42,7 @@ async function loadPosts() {
       const editLink = document.createElement('a');
       editLink.href = '/post/' + post.id + '/edit';
       editLink.textContent = 'Edit';
-      editLink.classList.add('link_btn');
+      editLink.classList.add('link_btn', 'edit_btn');
       article.appendChild(editLink);
     }
 
