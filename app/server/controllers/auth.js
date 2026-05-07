@@ -107,7 +107,7 @@ export const login = async (req, res) => {
   if (user.is_admin) {
     const code = crypto.randomInt(100000, 999999).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-    const codeHash = hashCode(code); // hash with HMAC and 2FA secret stored in .env. attacker unable to get 2fa code even if db compromised
+    const codeHash = hashCode(code); // hash with HMAC and AUTH_TOKEN_SECRET stored in .env. attacker unable to get 2fa code even if db compromised
 
     await authQueries.setEmailCode(user.id, codeHash, expiresAt);
 
