@@ -157,7 +157,7 @@ async function loadComments() {
     if (currentUser && (currentUser.id === comment.user_id || currentUser.is_admin)) {
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Delete';
-      delBtn.className = 'comment-delete-btn';
+      delBtn.className = 'comment-delete-btn delete_btn';
 
       // connect delete button to a listener to send the actual delete requests
       delBtn.addEventListener('click', async () => {
