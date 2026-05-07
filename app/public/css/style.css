@@ -429,6 +429,32 @@ legend {
   font-size: 0.9rem;
 }
 
+/* make pending posts visually different so users can quicky tell */
+.pending-post {
+  background-color: #e8f1fb;
+  border: 2px solid #2a6fb5;
+}
+
+/* make rejected posts visually distinct in the UI */
+.rejected-post {
+  background-color: #ec8282;
+  border: 4px solid #c0392b;
+}
+
+/* create a clear pending status to put on posts so not confused why a post not public */
+.pending-status {
+  background-color: #2a6fb5;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+/* a clear message to stand out */
+.warning {
+  background-color: #fff3cd;
+  text-align: left;
+}
+
 .comment {
   background-color: white;
   border: 2px solid #c74402;
