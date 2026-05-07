@@ -26,7 +26,15 @@ async function loadPosts() {
     article.appendChild(title);
 
     const meta = document.createElement('p');
-    meta.textContent = 'By ' + post.username + ' - ' + new Date(post.created_at).toLocaleDateString();
+    meta.textContent =
+      'By ' +
+      post.username +
+      ' - ' +
+      new Date(post.created_at).toLocaleString('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      });
+
     article.appendChild(meta);
 
     const content = document.createElement('p');

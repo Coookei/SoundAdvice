@@ -25,12 +25,16 @@ async function loadPosts() {
     article.appendChild(link);
 
     const meta = document.createElement('p');
-    meta.textContent = new Date(post.created_at).toLocaleDateString();
+    meta.textContent = new Date(post.created_at).toLocaleString('en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
     article.appendChild(meta);
 
     const status = document.createElement('span');
     status.textContent = post.status;
-    meta.appendChild(document.createTextNode(' - '));
+    meta.appendChild(document.createTextNode(' - Status: '));
     meta.appendChild(status);
 
     const content = document.createElement('p');

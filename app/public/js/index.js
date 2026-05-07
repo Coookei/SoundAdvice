@@ -23,7 +23,14 @@ async function loadLatestPosts() {
 
     // metadata showing author + timestamp
     const meta = document.createElement('p');
-    meta.textContent = 'By ' + post.username + ' - ' + new Date(post.created_at).toLocaleDateString();
+    meta.textContent =
+      'By ' +
+      post.username +
+      ' - ' +
+      new Date(post.created_at).toLocaleString('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      });
 
     // post content
     const content = document.createElement('p');

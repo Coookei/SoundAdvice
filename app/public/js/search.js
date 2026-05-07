@@ -41,7 +41,14 @@ async function loadSearchResults() {
     title.textContent = post.title;
 
     const meta = document.createElement('p');
-    meta.textContent = 'By ' + post.username + ' - ' + new Date(post.created_at).toLocaleDateString();
+    meta.textContent =
+      'By ' +
+      post.username +
+      ' - ' +
+      new Date(post.created_at).toLocaleString('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      });
 
     const content = document.createElement('p');
     content.textContent = post.content;

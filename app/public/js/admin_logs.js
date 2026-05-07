@@ -70,7 +70,10 @@ async function loadLogs() {
     // string cant inject html into admin table
     const rowData = [
       log.id,
-      new Date(log.created_at).toLocaleString(),
+      new Date(log.created_at).toLocaleString('en-GB', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      }),
       log.event_type,
       log.actor_id ?? '',
       log.ip ?? '',
