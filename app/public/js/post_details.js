@@ -23,7 +23,17 @@ async function loadPost() {
   document.getElementById('postAuthor').textContent = post.username;
   document.getElementById('postContent').innerHTML = '<p>' + post.content + '</p>';
 
-  if (post.status === 'pending' || post.status === 'rejected') {
+  if (post.status === 'pending') {
+    // for pending posts, we want a CLEAR visual indication in the UI for usability
+    document.getElementById('postView').classList.add('pending-post'); // class with blue UI
+
+    // very clear status message at top of the post
+    const statusElement = document.getElementById('postStatus');
+    statusElement.textContent = 'PENDING APPROVAL';
+    statusElement.classList.add('pending-status');
+    statusElement.classList.remove('hidden');
+  } else if (post.status === 'rejected') {
+    document.getElementById('postView').classList.add('rejected-post'); // visually distinct red outline
     const statusElement = document.getElementById('postStatus');
     statusElement.textContent = 'Status: ' + post.status;
     statusElement.classList.remove('hidden');
@@ -69,8 +79,13 @@ async function loadPost() {
     document.getElementById('loginToComment').classList.remove('hidden'); // show the login prommpt as guest
   } else if (post.status === 'approved') {
     document.getElementById('commentForm').classList.remove('hidden'); // as logged in and post approved, show comment form
+  } else if (post.status === 'pending') {
+    // add clear message telling the user due to approval, no comments can be left
+    const note = document.getElementById('disabledMessage');
+    note.textContent = 'Comments are disabled while this post is awaiting admin approval.';
+    note.classList.remove('hidden');
   }
-  // if user logged in but the post in not approved, then comment form stays hidden as cant leave comments when pending/rejected
+  // if user logged in but post is rejected, comment form stays hidden as cant leave comments on rejected posts
 
   // listen to submit on the comment form
   document.getElementById('commentForm').addEventListener('submit', async (e) => {
