@@ -1,7 +1,7 @@
 const parts = window.location.pathname.split('/');
 const postId = parts[2]; // URL is ' /post/:id/edit'
 
-const form = document.getElementById('editForm');
+const form = document.getElementById('postForm');
 
 async function loadPost() {
   const res = await fetch('/api/posts/' + postId);
