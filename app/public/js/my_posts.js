@@ -48,7 +48,7 @@ async function loadPosts() {
 
     const delBtn = document.createElement('button');
     delBtn.textContent = 'Delete';
-    delBtn.classList.add('link_btn');
+    delBtn.classList.add('link_btn', 'delete_btn');
     delBtn.addEventListener('click', async () => {
       // remove error message if already existing
       const existing = document.getElementById('post_error');
