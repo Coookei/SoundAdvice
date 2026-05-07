@@ -11,6 +11,13 @@ async function loadPosts() {
     article.classList.add('post');
     article.dataset.status = post.status; // store the status on the element so filter can show/hide it
 
+    // add the styles to make posts visually distinct for usability
+    if (post.status === 'pending') {
+      article.classList.add('pending-post');
+    } else if (post.status === 'rejected') {
+      article.classList.add('rejected-post');
+    }
+
     const title = document.createElement('h3');
     const titleLink = document.createElement('a');
     titleLink.textContent = post.title;
@@ -44,6 +51,7 @@ async function loadPosts() {
         if (res.ok) {
           statusElement.textContent = 'Status: approved';
           article.dataset.status = 'approved'; // update post status so filter will work
+          article.classList.remove('pending-post'); // remove pending blue colour, as now approved
 
           approveButton.remove();
           rejectButton.remove();
@@ -66,6 +74,8 @@ async function loadPosts() {
         if (res.ok) {
           statusElement.textContent = 'Status: rejected';
           article.dataset.status = 'rejected'; // update post status so filter will work
+          article.classList.remove('pending-post'); // remove pending colour
+          article.classList.add('rejected-post'); // add rejected red colour
 
           approveButton.remove();
           rejectButton.remove();
