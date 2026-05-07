@@ -490,3 +490,12 @@ legend {
 .hidden {
   display: none !important;
 }
+
+/* little banner to show success messages */
+.success {
+  background-color: #d4edda;
+  color: #155724;
+  text-align: center;
+  padding: 10px;
+  font-weight: bold;
+}

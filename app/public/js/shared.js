@@ -10,6 +10,7 @@ async function loadAuthState() {
   return user;
 }
 
+// if user loggedin, show username in dropdown, if admin show admin panel link, if not logged in, show sign in button
 async function displayUsernameDropdown() {
   const user = await authReady;
 
@@ -32,8 +33,6 @@ async function displayUsernameDropdown() {
   }
 }
 
-displayUsernameDropdown();
-
 // logout button will call the logout API and redirect to sign in
 document.querySelector('#logout_btn')?.addEventListener('click', async (e) => {
   e.preventDefault();
@@ -42,7 +41,10 @@ document.querySelector('#logout_btn')?.addEventListener('click', async (e) => {
   const res = await csrfFetch('/api/auth/logout', { method: 'POST' });
   const data = await res.json();
 
-  // redirect to URL or sign-in page
+  // show a logged out message, after the redirect, for usability
+  setSuccessMessage('You have been logged out.');
+
+  // redirect to URL or sign in page
   window.location.href = data.redirect || '/sign-in';
 });
 
@@ -58,3 +60,39 @@ async function csrfFetch(url, options = {}) {
     },
   });
 }
+
+// this function is used to save a success message in session storage so that it can be show to a user after redirect
+function setSuccessMessage(message) {
+  sessionStorage.setItem('success_message', message);
+}
+
+// this functino checks to see if there is a waiting success message in session storage,
+// if there is it will render a green banner, and then remove it after a couple seconds
+function showSuccessMessage() {
+  const message = sessionStorage.getItem('success_message'); // check if message waiting
+
+  if (!message) return; // if no message, exit
+
+  sessionStorage.removeItem('success_message'); // clear straight away so refreshing doesnt show message again
+
+  // make the banner element
+  const successElement = document.createElement('div');
+  successElement.className = 'success'; // class to render it in green
+  successElement.textContent = message;
+
+  // add it above main element, right under the nav
+  const mainElement = document.querySelector('main');
+  mainElement.parentNode.insertBefore(successElement, mainElement);
+
+  // after 4 seconds remove the success message
+  setTimeout(() => {
+    successElement.remove();
+  }, 4000);
+}
+
+// some pages dont have the dropdown menu eg signin page, so only run when its on the page
+if (document.getElementById('user_dropdown')) {
+  displayUsernameDropdown();
+}
+
+showSuccessMessage(); // check for success messages on every page load
