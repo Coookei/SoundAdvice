@@ -27,7 +27,7 @@ function clearSidCookie(res) {
 }
 
 const ADMIN_MAX_AGE = 60 * 60 * 1000; // admins only have 1 hour session
-const USER_MAX_AGE = 24 * 60 * 60 * 1000; // users session last 1 day
+const USER_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // users session last 7 days
 const PENDING_MAX_AGE = 10 * 60 * 1000; // 2FA flow lasts 10 minutes
 
 // runs on every request to look up session and attaches userId or pendingUserId
