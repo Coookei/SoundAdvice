@@ -9,6 +9,11 @@ async function loadPosts() {
 
     const article = document.createElement('article');
     article.classList.add('post');
+    if (post.status === 'pending') {
+      article.classList.add('pending-post'); // add distinct blue pending style
+    } else if (post.status === 'rejected') {
+      article.classList.add('rejected-post'); // add the red rejected styling
+    }
 
     const link = document.createElement('a');
     link.href = '/post/' + post.id;
