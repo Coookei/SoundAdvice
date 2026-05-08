@@ -20,7 +20,9 @@ async function loadPost() {
   const { post } = await res.json();
 
   document.getElementById('postTitle').textContent = post.title;
-  document.getElementById('postAuthor').textContent = post.username;
+  const authorElement = document.getElementById('postAuthor');
+  authorElement.textContent = post.username;
+  authorElement.href = '/profile/' + post.user_id; // link author name to their public profile
   document.getElementById('postContent').innerHTML = '<p>' + post.content + '</p>';
 
   if (post.status === 'pending') {
@@ -141,11 +143,16 @@ async function loadComments() {
     div.className = 'comment';
 
     const meta = document.createElement('p');
+
+    // link the commentor to their public profile
+    const authorLink = document.createElement('a');
+    authorLink.href = '/profile/' + comment.user_id;
     const strong = document.createElement('strong');
     strong.textContent = comment.username;
+    authorLink.appendChild(strong);
     const small = document.createElement('small');
     small.textContent = ' ' + new Date(comment.created_at).toLocaleDateString();
-    meta.appendChild(strong);
+    meta.appendChild(authorLink);
     meta.appendChild(small);
     div.appendChild(meta);
 
