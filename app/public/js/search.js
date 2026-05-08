@@ -40,15 +40,24 @@ async function loadSearchResults() {
     const title = document.createElement('h3');
     title.textContent = post.title;
 
+    // author name is link to their public profile
     const meta = document.createElement('p');
-    meta.textContent =
-      'By ' +
-      post.username +
-      ' - ' +
-      new Date(post.created_at).toLocaleString('en-GB', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      });
+    meta.appendChild(document.createTextNode('By '));
+
+    const authorLink = document.createElement('a');
+    authorLink.href = '/profile/' + post.user_id;
+    authorLink.textContent = post.username;
+    meta.appendChild(authorLink);
+
+    meta.appendChild(
+      document.createTextNode(
+        ' - ' +
+          new Date(post.created_at).toLocaleString('en-GB', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          })
+      )
+    );
 
     const content = document.createElement('p');
     content.textContent = post.content;
