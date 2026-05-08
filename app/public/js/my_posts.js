@@ -54,15 +54,18 @@ async function loadPosts() {
     delBtn.textContent = 'Delete';
     delBtn.classList.add('link_btn', 'delete_btn');
     delBtn.addEventListener('click', async () => {
-      // remove error message if already existing
-      const existing = document.getElementById('post_error');
-      if (existing) existing.remove();
+      // remove error and success message if already existing
+      const existingError = document.getElementById('post_error');
+      if (existingError) existingError.remove();
+      const existingSuccess = document.getElementById('post_success');
+      if (existingSuccess) existingSuccess.remove();
 
       const res = await csrfFetch('/api/posts/' + post.id, { method: 'DELETE' });
       const data = await res.json();
 
       if (res.ok) {
         article.remove();
+        showSuccess('Post deleted');
       } else {
         showError(data.error || 'Something went wrong');
       }
@@ -80,6 +83,14 @@ function showError(msg) {
   p.id = 'post_error';
   p.textContent = msg;
   p.classList.add('error');
+  document.getElementById('myPosts').insertBefore(p, document.getElementById('search_icon'));
+}
+
+function showSuccess(msg) {
+  const p = document.createElement('p');
+  p.id = 'post_success';
+  p.textContent = msg;
+  p.classList.add('success');
   document.getElementById('myPosts').insertBefore(p, document.getElementById('search_icon'));
 }
 
