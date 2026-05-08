@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Sound Advice</title>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <!-- hash set to font-awesome 4.7.0 so if CDN file ever modified, it wont be loaded -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+      integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN"
+      crossorigin="anonymous"
+    />
+    <script src="/js/profile_public.js" defer></script>
+    <script src="/js/shared.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/"><img id="logo" src="/images/logo.png" /></a>
+      <h1>Sound Advice</h1>
+      <a id="login_btn" class="hidden" href="/sign-in">Log in</a>
+      <div class="dropdown hidden" id="user_dropdown">
+        <button id="login_link">Username <i class="fa fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a href="/profile">Profile</a>
+          <a class="hidden" href="/admin/approval" id="admin_panel_link">Admin Panel</a>
+          <a id="logout_btn">Log out</a>
+        </div>
+      </div>
+    </header>
+
+    <nav>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/search">Search Posts</a></li>
+        <li><a href="/my-posts">My Posts</a></li>
+      </ul>
+    </nav>
+
+    <main class="profile-container">
+      <section class="profile-header">
+        <div class="profile-banner"></div>
+
+        <h2 id="profile_username">Username</h2>
+        <img id="profile_picture" class="profile-pic" alt="Profile picture" />
+
+        <div class="profile-info">
+          <p id="profile_joined"></p>
+          <p id="profile_bio"></p>
+        </div>
+      </section>
+
+      <section class="profile-posts">
+        <h3>Posts</h3>
+        <div id="postsList"></div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -41,6 +41,7 @@ router.get('/sign-in/magic-link', redirectIfAuthed, sendPage('magic_link.html'))
 router.get('/sign-in/magic-link/confirm', redirectIfAuthed, sendPage('magic_link_confirm.html'));
 router.get('/my-posts', redirectIfGuest, sendPage('my_posts.html')); // protected
 router.get('/profile', redirectIfGuest, sendPage('profile.html')); // protected
+router.get('/profile/:id', sendPage('profile_public.html')); // public
 router.get('/post/new', redirectIfGuest, sendPage('post_new.html')); // protected
 router.get('/search', sendPage('search.html')); // public
 router.get('/post/:id', sendPage('post_details.html')); // public
