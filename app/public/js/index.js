@@ -21,16 +21,24 @@ async function loadLatestPosts() {
     const title = document.createElement('h3');
     title.textContent = post.title;
 
-    // metadata showing author + timestamp
+    // metadata showing author + timestamp, with link to their profile
     const meta = document.createElement('p');
-    meta.textContent =
-      'By ' +
-      post.username +
-      ' - ' +
-      new Date(post.created_at).toLocaleString('en-GB', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      });
+    meta.appendChild(document.createTextNode('By '));
+
+    const authorLink = document.createElement('a');
+    authorLink.href = '/profile/' + post.user_id;
+    authorLink.textContent = post.username;
+    meta.appendChild(authorLink);
+
+    meta.appendChild(
+      document.createTextNode(
+        ' - ' +
+          new Date(post.created_at).toLocaleString('en-GB', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          })
+      )
+    );
 
     // post content
     const content = document.createElement('p');
