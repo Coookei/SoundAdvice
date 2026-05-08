@@ -11,7 +11,7 @@ export const findAll = async () => {
   return rows.map(({ email_encrypted, ...rest }) => ({ ...rest, email: maskEmail(decrypt(email_encrypted)) }));
 };
 
-// find single users by their id
+// private /auth/me response for user to get their own info, including their email
 export const findById = async (id) => {
   const { rows } = await pool.query(
     'SELECT id, username, email_encrypted, is_admin, created_at, bio, profile_picture FROM users WHERE id = $1',
@@ -22,6 +22,14 @@ export const findById = async (id) => {
   const { email_encrypted, ...rest } = rows[0];
   // rebuild object but without email_encrypted property
   return { ...rest, email: decrypt(email_encrypted) };
+};
+
+// for public profile, so only return restrictied info
+export const findPublicById = async (id) => {
+  const { rows } = await pool.query('SELECT id, username, created_at, bio, profile_picture FROM users WHERE id = $1', [
+    id,
+  ]);
+  return rows[0];
 };
 
 // checks if a user is an admin

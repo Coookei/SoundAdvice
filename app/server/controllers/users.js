@@ -29,7 +29,7 @@ export const getUsers = async (req, res) => {
   res.json({ users });
 };
 
-// get user by their user ID, used for public profile page
+// get a user by id for public profile page. only returns safe fields, no email or is_admin
 export const getUserById = async (req, res) => {
   // apply server side validation
   const check = validate(() => requirePositiveInt(req.params.id, 'user id'));
@@ -39,7 +39,7 @@ export const getUserById = async (req, res) => {
 
   const id = check.value; // we have cleaned and validated input here
 
-  const user = await userQueries.findById(id);
+  const user = await userQueries.findPublicById(id);
 
   if (!user) return res.status(404).json({ error: 'User not found' });
 
