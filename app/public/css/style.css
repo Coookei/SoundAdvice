@@ -553,6 +553,9 @@ legend {
   background-color: #2e7d32;
   color: white;
   border: 2px solid #1b5e20;
+  border-radius: 6px;
+  max-width: 1000px;
+  margin: 10px auto;
   text-align: center;
   padding: 10px;
   font-weight: bold;
