@@ -35,6 +35,9 @@ async function loadProfile() {
   document.getElementById('profile_email').textContent = 'Email: ' + user.email;
   document.getElementById('profile_joined').textContent = 'Joined: ' + new Date(user.created_at).toLocaleDateString(); // date profile joined, converted to correct timezone based on language settings
   document.getElementById('profile_bio').textContent = 'Bio: ' + (user.bio || 'No bio yet');
+
+  // make the view public profile button link to their user id
+  document.getElementById('public_profile_link').href = '/profile/' + user.id;
 }
 
 // load user info and update the UI on page load
