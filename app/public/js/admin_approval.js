@@ -25,15 +25,24 @@ async function loadPosts() {
     title.appendChild(titleLink);
     article.appendChild(title);
 
+    // author name links to their public profil
     const meta = document.createElement('p');
-    meta.textContent =
-      'By ' +
-      post.username +
-      ' - ' +
-      new Date(post.created_at).toLocaleString('en-GB', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      });
+    meta.appendChild(document.createTextNode('By '));
+
+    const authorLink = document.createElement('a');
+    authorLink.href = '/profile/' + post.user_id;
+    authorLink.textContent = post.username;
+    meta.appendChild(authorLink);
+
+    meta.appendChild(
+      document.createTextNode(
+        ' - ' +
+          new Date(post.created_at).toLocaleString('en-GB', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          })
+      )
+    );
 
     article.appendChild(meta);
 
