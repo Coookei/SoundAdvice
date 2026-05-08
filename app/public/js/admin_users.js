@@ -6,8 +6,6 @@ async function loadUsers() {
   // find table body element and append created rows with each user
   const tbody = document.getElementById('usersBody');
 
-  // user.email property is available but currently censored in UI for privacy
-
   for (const user of users) {
     const row = document.createElement('tr');
 
@@ -15,7 +13,7 @@ async function loadUsers() {
     const cells = [
       user.id,
       user.username,
-      'xxxxxxxx@gmail.com',
+      user.email,
       user.is_admin ? 'Yes' : 'No',
       new Date(user.created_at).toLocaleDateString(),
     ];

@@ -23,13 +23,13 @@ setInterval(
   10 * 60 * 1000
 ).unref();
 
-// gets all users
+// gets all users with their emails masked, used for admin panel
 export const getUsers = async (req, res) => {
   const users = await userQueries.findAll();
   res.json({ users });
 };
 
-// get user by their user ID
+// get user by their user ID, used for public profile page
 export const getUserById = async (req, res) => {
   // apply server side validation
   const check = validate(() => requirePositiveInt(req.params.id, 'user id'));
