@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import {
-  getCaptcha,
   register,
   login,
   verify2fa,
@@ -19,7 +18,6 @@ import { requireSameOrigin } from '../middleware/origin.js';
 
 const router = Router();
 
-router.get('/captcha', requireGuest, getCaptcha); // get a captcha challenge for registration, no auth required
 router.get('/me', me); // return user if logged in otherwise null, so no auth required
 router.post('/logout', csrfProtection, requireSession, logout); // this is only auth route that needs csrf protection as user has active session
 

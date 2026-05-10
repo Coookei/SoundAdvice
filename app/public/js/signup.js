@@ -1,16 +1,5 @@
 const form = document.getElementById('signup_form');
 const btn = document.getElementById('signup_btn');
-let captchaToken = null;
-
-// fetch a captcha on page load
-async function loadCaptcha() {
-  const res = await fetch('/api/auth/captcha');
-  const data = await res.json();
-  captchaToken = data.token;
-  document.getElementById('captcha_word').textContent = data.scrambled.toUpperCase();
-}
-
-loadCaptcha();
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -19,7 +8,10 @@ form.addEventListener('submit', async (e) => {
   const email = document.getElementById('email_input').value.trim();
   const password = document.getElementById('password_input').value;
   const confirmPassword = document.getElementById('confirm_password_input').value;
-  const captchaAnswer = document.getElementById('captcha_input').value.trim();
+
+  // Turnstile injects a hidden input named cf-turnstile-response inside the widget div.
+  // its value is the one-time token Cloudflare gives us once the user passes the challenge.
+  const turnstileToken = form.querySelector('[name="cf-turnstile-response"]')?.value || '';
 
   const existing = document.getElementById('signup_error');
   if (existing) existing.remove();
@@ -34,8 +26,8 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
-  if (!captchaAnswer) {
-    showError('Please solve the captcha.');
+  if (!turnstileToken) {
+    showError('Please complete the security check.');
     return;
   }
 
@@ -45,7 +37,7 @@ form.addEventListener('submit', async (e) => {
   const res = await fetch('/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, email, password, captchaToken, captchaAnswer }),
+    body: JSON.stringify({ username, email, password, turnstileToken }),
   });
 
   const data = await res.json();
@@ -57,7 +49,8 @@ form.addEventListener('submit', async (e) => {
     btn.disabled = false;
     btn.textContent = 'Sign up';
     showError(data.error || 'Something went wrong');
-    loadCaptcha(); // refresh captcha on failure
+    // reset Turnstile so the user can solve a new challenge
+    if (window.turnstile) window.turnstile.reset();
   }
 });
 

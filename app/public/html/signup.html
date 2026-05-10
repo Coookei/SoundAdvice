@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
     <link rel="stylesheet" href="/css/style.css" />
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script src="/js/signup.js" defer></script>
     <script src="/js/shared.js" defer></script>
   </head>
@@ -34,8 +35,7 @@
           placeholder="Confirm your password..."
         />
 
-        <label for="captcha_input">Unscramble the word: <span id="captcha_word"></span></label>
-        <input type="text" id="captcha_input" name="captcha_input" placeholder="Type the unscrambled word..." />
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADMrRCoN44VoTMZs"></div>
 
         <button id="signup_btn" type="submit">Sign up</button>
       </form>

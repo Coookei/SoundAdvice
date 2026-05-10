@@ -1,9 +1,9 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { generateCaptcha, verifyCaptcha } from '../lib/captcha.js';
 import { hashCode } from '../lib/crypto.js';
 import { sendEmail } from '../lib/email.js';
 import { recordEvent, AuditEvent } from '../lib/audit.js';
+import { verifyTurnstile } from '../lib/turnstile.js';
 import { generateCSRFToken } from '../middleware/csrf.js';
 import { createSession, destroySession, regenerateSession } from '../middleware/session.js';
 import * as authQueries from '../queries/auth.js';
@@ -21,30 +21,26 @@ import {
 // pre computed hash so we can run bcrypt.compare even when user doesnt exist. this prevents timing based account enumeration
 const FAKE_HASH = await bcrypt.hash('fake-password-for-timing' + process.env.PEPPER, 12);
 
-export const getCaptcha = (_req, res) => {
-  const { token, scrambled } = generateCaptcha();
-  res.json({ token, scrambled });
-};
-
 export const register = async (req, res) => {
-  // apply server side validation
+  // apply server side validation. Turnstile tokens are ~700+ chars, allow plenty of room
   const check = validate(() => ({
     username: requireUsername(req.body.username),
     email: requireEmail(req.body.email),
     password: requirePassword(req.body.password),
-    captchaToken: requireString(req.body.captchaToken, 'Captcha token', { min: 1, max: 100, trim: true }),
-    captchaAnswer: requireString(req.body.captchaAnswer, 'Captcha answer', { min: 1, max: 20, trim: true }),
+    turnstileToken: requireString(req.body.turnstileToken, 'Security check', { min: 1, max: 4096, trim: true }),
   }));
   if (!check.ok) {
-    // if any data is malformed, give error message back to user
     return res.status(400).json({ error: check.error });
   }
 
-  const { username, email, password, captchaToken, captchaAnswer } = check.value; // we have cleaned and validated input here
+  const { username, email, password, turnstileToken } = check.value;
 
-  if (!verifyCaptcha(captchaToken, captchaAnswer)) {
+  // verify the Turnstile token with Cloudflare. one-time use, expires after 5 mins.
+  // a valid token proves the client passed Cloudflare's bot detection (browser fingerprint, behaviour, IP reputation)
+  const passed = await verifyTurnstile(turnstileToken, req.ip);
+  if (!passed) {
     await recordEvent(req, AuditEvent.REGISTER_CAPTCHA_FAIL);
-    return res.status(400).json({ error: 'Incorrect captcha, try again' });
+    return res.status(400).json({ error: 'Security check failed, please try again' });
   }
 
   // record start time so that we can ensure registration attempts will always take at least 1 second,
