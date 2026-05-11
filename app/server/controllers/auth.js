@@ -116,6 +116,7 @@ export const login = async (req, res) => {
       .json({ error: 'Security check service is temporarily unavailable, please try again in a moment.' });
   }
   if (!passed) {
+    await recordEvent(req, AuditEvent.LOGIN_FAIL, { detail: 'captcha fail' });
     return res.status(400).json({ error: 'Security check failed, please try again' });
   }
 
