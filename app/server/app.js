@@ -10,6 +10,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
+// in production the app sits behind a reverse proxy so the real client IP is in the x-forwarded-for header,
+// so trust that 1 hop to get correct client ip, for rate limits, logs and turnstile. in development, its fine to use direct client ip.
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1); // only get ip from one hop away, so the reverse proxy
+}
+
 // middleware
 app.use(headersMiddleware); // security headers applied to every response
 app.use(express.json());
