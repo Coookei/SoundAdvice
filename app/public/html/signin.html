@@ -5,7 +5,11 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
     <link rel="stylesheet" href="/css/style.css" />
+
+    <!-- purposely do NOT add SRI hash here. Cloudflare updates this script regularly and does not post a pinned hash,
+      so an integrity attribute wld break widget on every update. The CSP script-src restricts loading to challenges.cloudflare.com anyways. -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
     <script src="/js/signin.js" defer></script>
     <script src="/js/shared.js" defer></script>
   </head>
@@ -24,7 +28,7 @@
         <label for="password_input">Password:</label>
         <input type="password" id="password_input" name="password_input" placeholder="Please enter your password..." />
 
-        <div class="cf-turnstile" data-sitekey="0x4AAAAAADMrRCoN44VoTMZs"></div>
+        <div class="cf-turnstile" data-sitekey="__TURNSTILE_SITE_KEY__"></div>
 
         <button id="login_btn" type="submit">Log in</button>
       </form>

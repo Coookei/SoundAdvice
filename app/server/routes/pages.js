@@ -19,7 +19,7 @@ const loadPage = (file) => {
   let html = fs.readFileSync(htmlPath(file), 'utf-8');
   html = injectIntegrity(html);
 
-  html = html.replaceAll('__TURNSTILE_SITE_KEY__', process.env.TURNSTILE_SITE_KEY); // inject turnstyle site key into signup page
+  html = html.replaceAll('__TURNSTILE_SITE_KEY__', process.env.TURNSTILE_SITE_KEY); // inject turnstyle site key into pages that use it
   return html;
 };
 
