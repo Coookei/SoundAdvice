@@ -16,7 +16,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const htmlPath = (file) => join(__dirname, '../../public/html', file);
 
 const loadPage = (file) => {
-  return injectIntegrity(fs.readFileSync(htmlPath(file), 'utf-8'));
+  let html = fs.readFileSync(htmlPath(file), 'utf-8');
+  html = injectIntegrity(html);
+
+  html = html.replaceAll('TURNSTILE_SITE_KEY', process.env.TURNSTILE_SITE_KEY); // inject turnstyle site key into signup page
+  return html;
 };
 
 const sendPage = (file) => {
