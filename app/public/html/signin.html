@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
     <link rel="stylesheet" href="/css/style.css" />
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script src="/js/signin.js" defer></script>
     <script src="/js/shared.js" defer></script>
   </head>
@@ -22,6 +23,8 @@
 
         <label for="password_input">Password:</label>
         <input type="password" id="password_input" name="password_input" placeholder="Please enter your password..." />
+
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADMrRCoN44VoTMZs"></div>
 
         <button id="login_btn" type="submit">Log in</button>
       </form>

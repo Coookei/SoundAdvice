@@ -96,13 +96,28 @@ export const login = async (req, res) => {
   const check = validate(() => ({
     email: requireEmail(req.body.email),
     password: requirePassword(req.body.password),
+    turnstileToken: requireString(req.body.turnstileToken, 'Security check', { min: 1, max: 4096, trim: true }),
   }));
   if (!check.ok) {
     // single generic message to avoid leaking which field was malformed
     return res.status(400).json({ error: 'Invalid email or password' });
   }
 
-  const { email, password } = check.value;
+  const { email, password, turnstileToken } = check.value;
+
+  // verify Turnstile first so bots cant credential stuff. valid token proves the request came from a real browser that passed Cloudflares bot detection
+  let passed;
+  try {
+    passed = await verifyTurnstile(turnstileToken, req.ip);
+  } catch (err) {
+    console.warn('Turnstile verify request failed, Cloudflare may be unreachable:', err.message);
+    return res
+      .status(503)
+      .json({ error: 'Security check service is temporarily unavailable, please try again in a moment.' });
+  }
+  if (!passed) {
+    return res.status(400).json({ error: 'Security check failed, please try again' });
+  }
 
   const user = await authQueries.findByEmail(email);
 
