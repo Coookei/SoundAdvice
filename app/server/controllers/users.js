@@ -6,6 +6,7 @@ import { hashCode } from '../lib/crypto.js';
 import { sendEmail } from '../lib/email.js';
 import { parseFileUpload } from '../lib/upload.js';
 import { validate, requireString, requirePassword, requireDigitCode, requirePositiveInt } from '../lib/validate.js';
+import { sanitiseHtml } from '../lib/sanitize.js';
 import { screenPassword } from '../lib/password_screen.js';
 import * as authQueries from '../queries/auth.js';
 import * as sessionQueries from '../queries/sessions.js';
@@ -54,7 +55,7 @@ export const updateBio = async (req, res) => {
     return res.status(400).json({ error: check.error });
   }
 
-  const bio = check.value;
+  const bio = sanitiseHtml(check.value);
 
   await userQueries.updateBio(req.userId, bio);
 
