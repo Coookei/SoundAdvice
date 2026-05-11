@@ -23,6 +23,8 @@ async function loadPost() {
   const authorElement = document.getElementById('postAuthor');
   authorElement.textContent = post.username;
   authorElement.href = '/profile/' + post.user_id; // link author name to their public profile
+
+  // innerHTML is safe here as post.content is sanitised on write to only allow specific HTML tags
   document.getElementById('postContent').innerHTML = '<p>' + post.content + '</p>';
 
   if (post.status === 'pending') {
