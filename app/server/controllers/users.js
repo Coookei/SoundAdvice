@@ -2,10 +2,11 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import fs from 'fs';
 import path from 'path';
-import { decrypt, hashCode } from '../lib/crypto.js';
+import { hashCode } from '../lib/crypto.js';
 import { sendEmail } from '../lib/email.js';
 import { parseFileUpload } from '../lib/upload.js';
 import { validate, requireString, requirePassword, requireDigitCode, requirePositiveInt } from '../lib/validate.js';
+import { screenPassword } from '../lib/password_screen.js';
 import * as authQueries from '../queries/auth.js';
 import * as sessionQueries from '../queries/sessions.js';
 import * as userQueries from '../queries/users.js';
@@ -78,6 +79,12 @@ export const requestPasswordChange = async (req, res) => {
     return res.status(400).json({ error: 'Incorrect current password' });
   }
 
+  // screen the new password against the common list, and reject ones containing the users own details
+  const screen = validate(() => screenPassword(newPassword, { username: user.username, email: user.email }));
+  if (!screen.ok) {
+    return res.status(400).json({ error: screen.error });
+  }
+
   // hash the new password now so plaintext isn't held in memory while waiting for the code
   const newHash = await bcrypt.hash(newPassword + process.env.PEPPER, 12);
 
@@ -87,10 +94,8 @@ export const requestPasswordChange = async (req, res) => {
 
   pendingChanges.set(req.userId, { newHash, expiresAt: Date.now() + 10 * 60 * 1000 });
 
-  const email = decrypt(user.email_encrypted);
-
   // this email send is behind auth, so the delay of awaiting the email send is not a risk of account enumeration
-  await sendEmail(email, 'SoundAdvice password change code', `Your code is: ${code}. It expires in 10 minutes.`);
+  await sendEmail(user.email, 'SoundAdvice password change code', `Your code is: ${code}. It expires in 10 minutes.`);
 
   res.json({ message: 'Code sent' });
 };
