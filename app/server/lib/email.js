@@ -7,7 +7,7 @@ export async function sendEmail(to, subject, text) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'SoundAdvice <soundadvice@emails.cookei.net>',
+      from: process.env.EMAIL_FROM,
       to,
       subject,
       text,
