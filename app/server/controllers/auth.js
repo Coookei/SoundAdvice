@@ -17,12 +17,13 @@ import {
   requireDigitCode,
   requireString,
 } from '../lib/validate.js';
+import { screenPassword } from '../lib/password_screen.js';
 
 // pre computed hash so we can run bcrypt.compare even when user doesnt exist. this prevents timing based account enumeration
 const FAKE_HASH = await bcrypt.hash('fake-password-for-timing' + process.env.PEPPER, 12);
 
 export const register = async (req, res) => {
-  // apply server side validation. Turnstile tokens are ~700+ chars, allow plenty of room
+  // apply server side validation. Turnstile tokens are around 700 chars, so have plenty of space
   const check = validate(() => ({
     username: requireUsername(req.body.username),
     email: requireEmail(req.body.email),
@@ -34,6 +35,13 @@ export const register = async (req, res) => {
   }
 
   const { username, email, password, turnstileToken } = check.value;
+
+  // extra check that the password isnt in the common breached list, or contains the users own username or email.
+  // we doing after initial validation, because need the already cleaned username/email
+  const screen = validate(() => screenPassword(password, { username, email }));
+  if (!screen.ok) {
+    return res.status(400).json({ error: screen.error });
+  }
 
   // verify the Turnstile token with Cloudflare. it is onetime use, expires after 5 mins.
   // a valid token proves the client passed Cloudflares bot detection (browser fingerprint, behaviour, IP reputation)
@@ -303,6 +311,12 @@ export const forgotReset = async (req, res) => {
   const user = await authQueries.findByResetToken(hashCode(token));
   if (!user || new Date() > new Date(user.password_reset_expires)) {
     return res.status(400).json({ error: 'Invalid or expired reset link' });
+  }
+
+  // screen the new password now that we know who the user is
+  const screen = validate(() => screenPassword(newPassword, { username: user.username, email: user.email }));
+  if (!screen.ok) {
+    return res.status(400).json({ error: screen.error });
   }
 
   const hashed = await bcrypt.hash(newPassword + process.env.PEPPER, 12);
