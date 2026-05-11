@@ -35,9 +35,20 @@ export const register = async (req, res) => {
 
   const { username, email, password, turnstileToken } = check.value;
 
-  // verify the Turnstile token with Cloudflare. one-time use, expires after 5 mins.
-  // a valid token proves the client passed Cloudflare's bot detection (browser fingerprint, behaviour, IP reputation)
-  const passed = await verifyTurnstile(turnstileToken, req.ip);
+  // verify the Turnstile token with Cloudflare. it is onetime use, expires after 5 mins.
+  // a valid token proves the client passed Cloudflares bot detection (browser fingerprint, behaviour, IP reputation)
+  let passed;
+  try {
+    passed = await verifyTurnstile(turnstileToken, req.ip);
+  } catch (err) {
+    // network error reaching Cloudflare so return a 503 so the user knows it isnt their fault
+    console.warn('Turnstile verify request failed, Cloudflare may be unreachable:', err.message);
+    return res
+      .status(503)
+      .json({ error: 'Security check service is temporarily unavailable, please try again in a moment.' });
+  }
+
+  // otherwise user has failed the captcha check
   if (!passed) {
     await recordEvent(req, AuditEvent.REGISTER_CAPTCHA_FAIL);
     return res.status(400).json({ error: 'Security check failed, please try again' });
