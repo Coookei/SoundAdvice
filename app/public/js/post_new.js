@@ -1,4 +1,5 @@
 const form = document.getElementById('postForm');
+const imageInput = document.getElementById('image_field');
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -14,10 +15,18 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
+  // use form data so we can send the image along with the title and content
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('content', content);
+  if (imageInput.files[0]) {
+    formData.append('image', imageInput.files[0]);
+  }
+
+  // dont set a content-type header, the browser does that for us when the body is form data
   const res = await csrfFetch('/api/posts', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, content }),
+    body: formData,
   });
 
   const data = await res.json();
