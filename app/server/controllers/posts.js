@@ -2,6 +2,7 @@ import * as postQueries from '../queries/posts.js';
 import * as userQueries from '../queries/users.js';
 import { recordEvent, AuditEvent } from '../lib/audit.js';
 import { sanitiseHtml } from '../lib/sanitize.js';
+import { parseFileUpload, saveUpload, deleteUpload } from '../lib/upload.js';
 import { validate, requireString, requirePositiveInt, requireOneOf } from '../lib/validate.js';
 
 // get all approved posts, used for the homepage
@@ -60,10 +61,29 @@ export const getAdminPosts = async (req, res) => {
   res.json({ posts });
 };
 
+// a create or edit request comes in as plain json, or as multipart form data when theres an image attached
+// so this pulls out the body fields and the file (if is one) from whichever one it is
+async function readPostInput(req) {
+  const contentType = req.headers?.['content-type'] || '';
+  if (contentType.includes('multipart/form-data')) {
+    const upload = await parseFileUpload(req);
+    return { body: upload.fields, fileBuffer: upload.fileBuffer, fileExt: upload.fileExt };
+  }
+  return { body: req.body, fileBuffer: null, fileExt: null }; // its just normal json
+}
+
 export const createPost = async (req, res) => {
+  let body, fileBuffer, fileExt;
+  try {
+    ({ body, fileBuffer, fileExt } = await readPostInput(req));
+  } catch (err) {
+    // bad image, eg too big or not a png/jpeg
+    return res.status(400).json({ error: err.message });
+  }
+
   const check = validate(() => ({
-    title: requireString(req.body.title, 'Title', { min: 1, max: 200, trim: true }),
-    content: requireString(req.body.content, 'Content', { min: 1, max: 20000, trim: true }),
+    title: requireString(body?.title, 'Title', { min: 1, max: 200, trim: true }),
+    content: requireString(body?.content, 'Content', { min: 1, max: 20000, trim: true }),
   }));
   if (!check.ok) {
     return res.status(400).json({ error: check.error });
@@ -75,8 +95,14 @@ export const createPost = async (req, res) => {
   const safeTitle = sanitiseHtml(title);
   const safeContent = sanitiseHtml(content);
 
+  // if they uploaded an image save it and keep the path to store on the post
+  let imagePath = null;
+  if (fileBuffer) {
+    imagePath = await saveUpload(fileBuffer, `post_${req.userId}_${Date.now()}.${fileExt}`);
+  }
+
   // create new post with authd users id, default status is pending
-  const post = await postQueries.create(req.userId, safeTitle, safeContent);
+  const post = await postQueries.create(req.userId, safeTitle, safeContent, imagePath);
   await recordEvent(req, AuditEvent.POST_CREATED, { actorId: req.userId, postId: post.id });
   res.status(201).json({ post });
 };
@@ -102,9 +128,18 @@ export const updatePost = async (req, res) => {
     return res.status(403).json({ error: 'Rejected posts cannot be edited' });
   }
 
+  // same as creating, the edit might have a new image so it could be form data or json
+  let body, fileBuffer, fileExt;
+  try {
+    ({ body, fileBuffer, fileExt } = await readPostInput(req));
+  } catch (err) {
+    // bad image, eg too big or not a png/jpeg
+    return res.status(400).json({ error: err.message });
+  }
+
   const bodyCheck = validate(() => ({
-    title: requireString(req.body.title, 'Title', { min: 1, max: 200, trim: true }),
-    content: requireString(req.body.content, 'Content', { min: 1, max: 20000, trim: true }),
+    title: requireString(body?.title, 'Title', { min: 1, max: 200, trim: true }),
+    content: requireString(body?.content, 'Content', { min: 1, max: 20000, trim: true }),
   }));
   if (!bodyCheck.ok) {
     return res.status(400).json({ error: bodyCheck.error });
@@ -115,9 +150,23 @@ export const updatePost = async (req, res) => {
   const safeTitle = sanitiseHtml(title);
   const safeContent = sanitiseHtml(content);
 
+  let imagePath = post.image_path ?? null; // get the current image for this post
+
+  if (fileBuffer) {
+    // if user uploaded a new image, save it and delete the old one if there was one
+    imagePath = await saveUpload(fileBuffer, `post_${req.userId}_${Date.now()}.${fileExt}`);
+    if (post.image_path) {
+      await deleteUpload(post.image_path);
+    }
+  } else if (body?.removeImage === 'true' && post.image_path) {
+    // otherwise if user ticked the remove image box, and the post does have an image, delete it
+    await deleteUpload(post.image_path);
+    imagePath = null;
+  }
+
   // if an admin updates post, LEAVE state as it, i.e. if approved STAYS approved
   // whereas if user updates post goes back to pending status
-  const updated = await postQueries.update(id, safeTitle, safeContent, isAdmin ? post.status : 'pending');
+  const updated = await postQueries.update(id, safeTitle, safeContent, imagePath, isAdmin ? post.status : 'pending');
   await recordEvent(req, AuditEvent.POST_UPDATED, {
     actorId: req.userId,
     postId: post.id,
