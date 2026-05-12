@@ -274,6 +274,14 @@ section {
   text-align: left;
 }
 
+.post_img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-top: 10px;
+  border-radius: 5px;
+}
+
 .search_bar {
   width: 750px;
   height: 30px;
@@ -405,6 +413,14 @@ legend {
   display: block;
   width: 100%;
   margin: 1%;
+}
+
+/* make image checkbox normal sized, so not full width block like other inputs or looks weird */
+#postForm #remove_image {
+  display: inline;
+  width: auto;
+  height: auto;
+  padding: 0;
 }
 
 #postForm button[type='submit'] {
