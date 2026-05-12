@@ -1,4 +1,10 @@
+import fs from 'fs/promises';
+import path from 'path';
+
 const max_file_size = 5 * 1024 * 1024; // max file size = 5MB
+
+// folder where uploaded files get saved, also served at /uploads
+const uploadDir = 'uploads';
 
 // split buffer by delimiter
 // deliimiter - used to split raw multipart request into separate sections
@@ -30,9 +36,12 @@ function splitBuffer(buffer, delimiter) {
   return parts;
 }
 
-// profile pic upload
+// reads a multipart form upload, gives back the file (if there is one) and any text fields sent with it
 export function parseFileUpload(req) {
   return new Promise((resolve, reject) => {
+    // the plain text fields like title and content
+    const fields = {};
+
     // checks content type of request using headers
     const contentType = req.headers['content-type'];
 
@@ -123,8 +132,12 @@ export function parseFileUpload(req) {
           // extract file content after headers
           const body = part.slice(headerEnd + 4, part.lastIndexOf('\r\n'));
 
-          // skip non file fields
+          // no filename means this section is a normal text field not a file, so grab its name + value and move on
           if (!header.includes('filename=')) {
+            const nameMatch = header.match(/name="([^"]+)"/);
+            if (nameMatch) {
+              fields[nameMatch[1]] = body.toString().trim();
+            }
             continue;
           }
 
@@ -147,15 +160,12 @@ export function parseFileUpload(req) {
           } else {
             return reject(new Error('Only PNG / JPEG files are allowed'));
           }
-          break;
+          // dont break here, there might still be text fields after the file
         }
 
-        // check file was found
-        if (!fileBuffer) {
-          return reject(new Error('No file uploaded'));
-        }
-
-        resolve({ fileBuffer, fileExt });
+        // the file is optional (a post doesnt need an image) so if there wasnt one just send back the fields,
+        // file stuff left null, and let the caller decide if thats ok
+        resolve({ fileBuffer, fileExt, fields });
       } catch (err) {
         reject(err);
       }
@@ -163,4 +173,21 @@ export function parseFileUpload(req) {
     // error handling
     req.on('error', reject);
   });
+}
+
+// saves a file into the uploads folder and returns the /uploads/ path for it, fileName made by us so write cant end up outside the folder
+export async function saveUpload(fileBuffer, fileName) {
+  await fs.mkdir(uploadDir, { recursive: true }); // make the folder if its not there yet
+  await fs.writeFile(path.join(uploadDir, fileName), fileBuffer);
+  return `/${uploadDir}/${fileName}`;
+}
+
+// deletes an old uploaded file given its /uploads/ path
+export async function deleteUpload(publicPath) {
+  const fileName = path.basename(publicPath); // just the filename bit, so we cant delete anything outside uploads
+  try {
+    await fs.unlink(path.join(uploadDir, fileName));
+  } catch {
+    // file might already be gone, so all good
+  }
 }
