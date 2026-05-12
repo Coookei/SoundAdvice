@@ -34,6 +34,7 @@ form.addEventListener('submit', async (e) => {
 
   if (res.ok) {
     sessionStorage.removeItem('forgot_token');
+    setSuccessMessage('Password updated. Please sign in.');
     window.location.href = data.redirect || '/sign-in';
   } else {
     showError(data.error || 'Something went wrong');

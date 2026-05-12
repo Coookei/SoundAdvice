@@ -20,10 +20,24 @@ async function loadPost() {
   const { post } = await res.json();
 
   document.getElementById('postTitle').textContent = post.title;
-  document.getElementById('postAuthor').textContent = post.username;
+  const authorElement = document.getElementById('postAuthor');
+  authorElement.textContent = post.username;
+  authorElement.href = '/profile/' + post.user_id; // link author name to their public profile
+
+  // innerHTML is safe here as post.content is sanitised on write to only allow specific HTML tags
   document.getElementById('postContent').innerHTML = '<p>' + post.content + '</p>';
 
-  if (post.status === 'pending' || post.status === 'rejected') {
+  if (post.status === 'pending') {
+    // for pending posts, we want a CLEAR visual indication in the UI for usability
+    document.getElementById('postView').classList.add('pending-post'); // class with blue UI
+
+    // very clear status message at top of the post
+    const statusElement = document.getElementById('postStatus');
+    statusElement.textContent = 'PENDING APPROVAL';
+    statusElement.classList.add('pending-status');
+    statusElement.classList.remove('hidden');
+  } else if (post.status === 'rejected') {
+    document.getElementById('postView').classList.add('rejected-post'); // visually distinct red outline
     const statusElement = document.getElementById('postStatus');
     statusElement.textContent = 'Status: ' + post.status;
     statusElement.classList.remove('hidden');
@@ -55,6 +69,7 @@ async function loadPost() {
     const data = await deleteRes.json();
 
     if (deleteRes.ok) {
+      setSuccessMessage('Post deleted.');
       window.location.href = '/';
     } else {
       showError(data.error || 'Something went wrong');
@@ -68,8 +83,13 @@ async function loadPost() {
     document.getElementById('loginToComment').classList.remove('hidden'); // show the login prommpt as guest
   } else if (post.status === 'approved') {
     document.getElementById('commentForm').classList.remove('hidden'); // as logged in and post approved, show comment form
+  } else if (post.status === 'pending') {
+    // add clear message telling the user due to approval, no comments can be left
+    const note = document.getElementById('disabledMessage');
+    note.textContent = 'Comments are disabled while this post is awaiting admin approval.';
+    note.classList.remove('hidden');
   }
-  // if user logged in but the post in not approved, then comment form stays hidden as cant leave comments when pending/rejected
+  // if user logged in but post is rejected, comment form stays hidden as cant leave comments on rejected posts
 
   // listen to submit on the comment form
   document.getElementById('commentForm').addEventListener('submit', async (e) => {
@@ -125,11 +145,16 @@ async function loadComments() {
     div.className = 'comment';
 
     const meta = document.createElement('p');
+
+    // link the commentor to their public profile
+    const authorLink = document.createElement('a');
+    authorLink.href = '/profile/' + comment.user_id;
     const strong = document.createElement('strong');
     strong.textContent = comment.username;
+    authorLink.appendChild(strong);
     const small = document.createElement('small');
     small.textContent = ' ' + new Date(comment.created_at).toLocaleDateString();
-    meta.appendChild(strong);
+    meta.appendChild(authorLink);
     meta.appendChild(small);
     div.appendChild(meta);
 
@@ -141,7 +166,7 @@ async function loadComments() {
     if (currentUser && (currentUser.id === comment.user_id || currentUser.is_admin)) {
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Delete';
-      delBtn.className = 'comment-delete-btn';
+      delBtn.className = 'comment-delete-btn delete_btn';
 
       // connect delete button to a listener to send the actual delete requests
       delBtn.addEventListener('click', async () => {

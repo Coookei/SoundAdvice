@@ -16,7 +16,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const htmlPath = (file) => join(__dirname, '../../public/html', file);
 
 const loadPage = (file) => {
-  return injectIntegrity(fs.readFileSync(htmlPath(file), 'utf-8'));
+  let html = fs.readFileSync(htmlPath(file), 'utf-8');
+  html = injectIntegrity(html);
+
+  html = html.replaceAll('__TURNSTILE_SITE_KEY__', process.env.TURNSTILE_SITE_KEY); // inject turnstyle site key into pages that use it
+  return html;
 };
 
 const sendPage = (file) => {
@@ -41,6 +45,7 @@ router.get('/sign-in/magic-link', redirectIfAuthed, sendPage('magic_link.html'))
 router.get('/sign-in/magic-link/confirm', redirectIfAuthed, sendPage('magic_link_confirm.html'));
 router.get('/my-posts', redirectIfGuest, sendPage('my_posts.html')); // protected
 router.get('/profile', redirectIfGuest, sendPage('profile.html')); // protected
+router.get('/profile/:id', sendPage('profile_public.html')); // public
 router.get('/post/new', redirectIfGuest, sendPage('post_new.html')); // protected
 router.get('/search', sendPage('search.html')); // public
 router.get('/post/:id', sendPage('post_details.html')); // public

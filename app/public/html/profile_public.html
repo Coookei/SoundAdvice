@@ -12,7 +12,7 @@
       integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN"
       crossorigin="anonymous"
     />
-    <script src="/js/profile.js" defer></script>
+    <script src="/js/profile_public.js" defer></script>
     <script src="/js/shared.js" defer></script>
   </head>
   <body>
@@ -44,43 +44,16 @@
 
         <h2 id="profile_username">Username</h2>
         <img id="profile_picture" class="profile-pic" alt="Profile picture" />
-        <button><a id="public_profile_link">View public profile</a></button>
 
         <div class="profile-info">
-          <p id="profile_email"></p>
           <p id="profile_joined"></p>
           <p id="profile_bio"></p>
         </div>
       </section>
 
-      <section class="profile-edit">
-        <h3>Update your Profile Picture</h3>
-        <p id="no_pfp_message" class="hidden">You have not yet set a profile picture.</p>
-
-        <div class="pfp-controls">
-          <input type="file" id="pfp_input" accept="image/*" />
-          <button id="upload_pfp_btn">Save Picture</button>
-        </div>
-
-        <h3>Update your Bio</h3>
-        <div class="edit-row">
-          <textarea id="bio_input" placeholder="Update your bio"></textarea>
-          <button id="save_bio_btn">Save Bio</button>
-        </div>
-
-        <h3>Change your Password</h3>
-        <p>Enter your current password and your new password. You will be sent an email to confirm this change.</p>
-        <div class="edit-row">
-          <input type="password" id="current_password" placeholder="Current Password" />
-        </div>
-        <div class="edit-row">
-          <input type="password" id="new_password" placeholder="New Password" minlength="8" />
-          <button id="request_password_btn">Send Code</button>
-        </div>
-        <div class="edit-row hidden" id="password_code_row">
-          <input type="text" id="password_code" placeholder="Enter code from email" maxlength="6" />
-          <button id="confirm_password_btn">Update Password</button>
-        </div>
+      <section class="profile-posts">
+        <h3>Posts</h3>
+        <div id="postsList"></div>
       </section>
     </main>
   </body>

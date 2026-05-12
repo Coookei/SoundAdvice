@@ -2,10 +2,12 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import fs from 'fs';
 import path from 'path';
-import { decrypt, hashCode } from '../lib/crypto.js';
+import { hashCode } from '../lib/crypto.js';
 import { sendEmail } from '../lib/email.js';
 import { parseFileUpload } from '../lib/upload.js';
 import { validate, requireString, requirePassword, requireDigitCode, requirePositiveInt } from '../lib/validate.js';
+import { sanitiseHtml } from '../lib/sanitize.js';
+import { screenPassword } from '../lib/password_screen.js';
 import * as authQueries from '../queries/auth.js';
 import * as sessionQueries from '../queries/sessions.js';
 import * as userQueries from '../queries/users.js';
@@ -23,13 +25,13 @@ setInterval(
   10 * 60 * 1000
 ).unref();
 
-// gets all users
+// gets all users with their emails masked, used for admin panel
 export const getUsers = async (req, res) => {
   const users = await userQueries.findAll();
   res.json({ users });
 };
 
-// get user by their user ID
+// get a user by id for public profile page. only returns safe fields, no email or is_admin
 export const getUserById = async (req, res) => {
   // apply server side validation
   const check = validate(() => requirePositiveInt(req.params.id, 'user id'));
@@ -39,7 +41,7 @@ export const getUserById = async (req, res) => {
 
   const id = check.value; // we have cleaned and validated input here
 
-  const user = await userQueries.findById(id);
+  const user = await userQueries.findPublicById(id);
 
   if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -53,7 +55,7 @@ export const updateBio = async (req, res) => {
     return res.status(400).json({ error: check.error });
   }
 
-  const bio = check.value;
+  const bio = sanitiseHtml(check.value);
 
   await userQueries.updateBio(req.userId, bio);
 
@@ -78,6 +80,12 @@ export const requestPasswordChange = async (req, res) => {
     return res.status(400).json({ error: 'Incorrect current password' });
   }
 
+  // screen the new password against the common list, and reject ones containing the users own details
+  const screen = validate(() => screenPassword(newPassword, { username: user.username, email: user.email }));
+  if (!screen.ok) {
+    return res.status(400).json({ error: screen.error });
+  }
+
   // hash the new password now so plaintext isn't held in memory while waiting for the code
   const newHash = await bcrypt.hash(newPassword + process.env.PEPPER, 12);
 
@@ -87,8 +95,8 @@ export const requestPasswordChange = async (req, res) => {
 
   pendingChanges.set(req.userId, { newHash, expiresAt: Date.now() + 10 * 60 * 1000 });
 
-  const email = decrypt(user.email_encrypted);
-  await sendEmail(email, 'SoundAdvice password change code', `Your code is: ${code}. It expires in 10 minutes.`);
+  // this email send is behind auth, so the delay of awaiting the email send is not a risk of account enumeration
+  await sendEmail(user.email, 'SoundAdvice password change code', `Your code is: ${code}. It expires in 10 minutes.`);
 
   res.json({ message: 'Code sent' });
 };

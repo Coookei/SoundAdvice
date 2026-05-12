@@ -23,6 +23,7 @@ form.addEventListener('submit', async (e) => {
   const data = await res.json();
 
   if (res.ok) {
+    setSuccessMessage('Post submitted for approval.');
     window.location.href = '/my-posts';
   } else {
     showError(data.error || 'Something went wrong');

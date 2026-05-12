@@ -41,13 +41,13 @@
     <main>
       <section id="postView">
         <div id="postActions" class="hidden">
-          <a id="edit_btn" class="link_btn" href="#">Edit</a>
-          <button id="delete_btn" class="link_btn">Delete</button>
+          <a id="edit_btn" class="link_btn edit_btn" href="#">Edit</a>
+          <button id="delete_btn" class="link_btn delete_btn">Delete</button>
         </div>
 
+        <div id="postStatus" class="hidden"></div>
         <h2 id="postTitle">Post Title</h2>
-        <p id="postStatus" class="hidden"></p>
-        <p id="postMeta">Posted by <span id="postAuthor">username</span></p>
+        <p id="postMeta">Posted by <a id="postAuthor">username</a></p>
         <div id="postContent">
           <p>Post content goes here.</p>
         </div>
@@ -57,6 +57,7 @@
         <h3>Comments</h3>
         <div id="commentsList"></div>
 
+        <p id="disabledMessage" class="hidden"></p>
         <p id="loginToComment" class="hidden"><a href="/sign-in">Log in</a> to leave a comment.</p>
 
         <form id="commentForm" class="hidden">

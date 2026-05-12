@@ -9,6 +9,11 @@ async function loadPosts() {
 
     const article = document.createElement('article');
     article.classList.add('post');
+    if (post.status === 'pending') {
+      article.classList.add('pending-post'); // add distinct blue pending style
+    } else if (post.status === 'rejected') {
+      article.classList.add('rejected-post'); // add the red rejected styling
+    }
 
     const link = document.createElement('a');
     link.href = '/post/' + post.id;
@@ -20,12 +25,16 @@ async function loadPosts() {
     article.appendChild(link);
 
     const meta = document.createElement('p');
-    meta.textContent = new Date(post.created_at).toLocaleDateString();
+    meta.textContent = new Date(post.created_at).toLocaleString('en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
     article.appendChild(meta);
 
     const status = document.createElement('span');
     status.textContent = post.status;
-    meta.appendChild(document.createTextNode(' - '));
+    meta.appendChild(document.createTextNode(' - Status: '));
     meta.appendChild(status);
 
     const content = document.createElement('p');
@@ -37,23 +46,26 @@ async function loadPosts() {
       const editLink = document.createElement('a');
       editLink.href = '/post/' + post.id + '/edit';
       editLink.textContent = 'Edit';
-      editLink.classList.add('link_btn');
+      editLink.classList.add('link_btn', 'edit_btn');
       article.appendChild(editLink);
     }
 
     const delBtn = document.createElement('button');
     delBtn.textContent = 'Delete';
-    delBtn.classList.add('link_btn');
+    delBtn.classList.add('link_btn', 'delete_btn');
     delBtn.addEventListener('click', async () => {
-      // remove error message if already existing
-      const existing = document.getElementById('post_error');
-      if (existing) existing.remove();
+      // remove error and success message if already existing
+      const existingError = document.getElementById('post_error');
+      if (existingError) existingError.remove();
+      const existingSuccess = document.getElementById('post_success');
+      if (existingSuccess) existingSuccess.remove();
 
       const res = await csrfFetch('/api/posts/' + post.id, { method: 'DELETE' });
       const data = await res.json();
 
       if (res.ok) {
         article.remove();
+        showSuccess('Post deleted');
       } else {
         showError(data.error || 'Something went wrong');
       }
@@ -71,6 +83,14 @@ function showError(msg) {
   p.id = 'post_error';
   p.textContent = msg;
   p.classList.add('error');
+  document.getElementById('myPosts').insertBefore(p, document.getElementById('search_icon'));
+}
+
+function showSuccess(msg) {
+  const p = document.createElement('p');
+  p.id = 'post_success';
+  p.textContent = msg;
+  p.classList.add('success');
   document.getElementById('myPosts').insertBefore(p, document.getElementById('search_icon'));
 }
 

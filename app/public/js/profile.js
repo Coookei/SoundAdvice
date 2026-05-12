@@ -1,97 +1,49 @@
-// load users profile
 async function loadProfile() {
-  try {
-    // get currently logged in user from session
-    const meRes = await fetch('/api/auth/me');
-    const meData = await meRes.json();
+  // get currently logged in user from session
+  const meRes = await fetch('/api/auth/me');
+  const meData = await meRes.json();
 
-    // if user not logged in, redirected to sign-in page
-    if (!meRes.ok) {
-      window.location.href = '/sign-in';
-      return;
-    }
-
-    // extract user data
-    const user = meData.user;
-    const userId = user.id;
-
-    // set profile picture, hide if none or fails to load
-    const img = document.getElementById('profile_picture');
-    if (user.profile_picture) {
-      img.src = user.profile_picture;
-
-      // prevents broken image display
-      img.onerror = () => {
-        img.classList.add('hidden');
-      };
-    } else {
-      img.classList.add('hidden');
-    }
-
-    // load profile info
-    document.getElementById('profile_username').textContent = user.username;
-    document.getElementById('profile_email').textContent = user.email;
-    document.getElementById('profile_joined').textContent = 'Joined: ' + new Date(user.created_at).toLocaleDateString(); // date profile joined, converted to correct timezone based on language settings
-    document.getElementById('profile_bio').textContent = user.bio || 'No bio yet';
-
-    // fetch posts - uses user id to query posts
-    const postRes = await fetch(`/api/posts/user/${userId}`);
-    const postData = await postRes.json();
-
-    // render posts
-    renderPosts(postData.posts || []);
-  } catch (err) {
-    console.log(err);
-  }
-}
-
-// render list of posts
-function renderPosts(posts) {
-  // container to hold all posts
-  const container = document.getElementById('posts_container');
-  container.replaceChildren();
-
-  // message if no posts yet
-  if (posts.length == 0) {
-    const empty = document.createElement('p');
-    empty.textContent = 'No posts yet';
-    container.appendChild(empty);
+  // if user not logged in, redirected to sign-in page
+  if (!meRes.ok) {
+    window.location.href = '/sign-in';
     return;
   }
 
-  // loop through each post + create elements dynamically
-  posts.forEach((post) => {
-    // container for each post
-    const div = document.createElement('div');
-    div.classList.add('post-card');
+  // extract user data
+  const user = meData.user;
+  const userId = user.id;
 
-    // post title
-    const title = document.createElement('div');
-    title.classList.add('post-title');
-    title.textContent = post.title;
+  // set profile picture, show no profile set message if not set or fails to load
+  const img = document.getElementById('profile_picture');
+  const noPfpMessage = document.getElementById('no_pfp_message');
+  if (user.profile_picture) {
+    img.src = user.profile_picture;
 
-    // post metadata - creation date
-    const meta = document.createElement('div');
-    meta.classList.add('post-meta');
-    meta.textContent = new Date(post.created_at).toLocaleString();
+    // prevents broken image display
+    img.onerror = () => {
+      // hide image and show no profile picture message
+      img.classList.add('hidden');
+      noPfpMessage.classList.remove('hidden');
+    };
+  } else {
+    img.classList.add('hidden');
+    noPfpMessage.classList.remove('hidden');
+  }
 
-    // post content
-    const content = document.createElement('p');
-    content.textContent = post.content;
+  // set profile info in UI
+  document.getElementById('profile_username').textContent = 'Welcome ' + user.username + '!';
+  document.getElementById('profile_email').textContent = 'Email: ' + user.email;
+  document.getElementById('profile_joined').textContent = 'Joined: ' + new Date(user.created_at).toLocaleDateString(); // date profile joined, converted to correct timezone based on language settings
+  document.getElementById('profile_bio').textContent = 'Bio: ' + (user.bio || 'No bio yet');
 
-    // add elements into post card
-    div.appendChild(title);
-    div.appendChild(meta);
-    div.appendChild(content);
-
-    container.appendChild(div);
-  });
+  // make the view public profile button link to their user id
+  document.getElementById('public_profile_link').href = '/profile/' + user.id;
 }
 
-// initialise profile
+// load user info and update the UI on page load
 loadProfile();
 
-// profile actions - upload profile pic
+// upload profile pic
 document.getElementById('upload_pfp_btn').addEventListener('click', async () => {
   const fileInput = document.getElementById('pfp_input');
   const file = fileInput.files[0];
@@ -111,6 +63,7 @@ document.getElementById('upload_pfp_btn').addEventListener('click', async () => 
 
   // reload page if upload reflects profile picture
   if (res.ok) {
+    setSuccessMessage('Profile picture updated.');
     location.reload();
   } else {
     alert('Failed to upload profile picture');
@@ -131,11 +84,13 @@ document.getElementById('save_bio_btn').addEventListener('click', async () => {
   });
 
   // reload page if bio upload successful
-  if (res.ok) location.reload();
-  else alert('Failed to update bio');
+  if (res.ok) {
+    setSuccessMessage('Bio updated.');
+    location.reload();
+  } else alert('Failed to update bio');
 });
 
-// password change - step 1: send email code
+// password change, step 1: send email code
 document.getElementById('request_password_btn').addEventListener('click', async () => {
   const currentPassword = document.getElementById('current_password').value;
   const newPassword = document.getElementById('new_password').value;
@@ -160,7 +115,7 @@ document.getElementById('request_password_btn').addEventListener('click', async 
   }
 });
 
-// password change - step 2: confirm with code
+// password change, step 2: confirm with code
 document.getElementById('confirm_password_btn').addEventListener('click', async () => {
   const code = document.getElementById('password_code').value;
 
@@ -174,7 +129,7 @@ document.getElementById('confirm_password_btn').addEventListener('click', async 
   const data = await res.json();
 
   if (res.ok) {
-    alert('Password updated. Other devices have been logged out.');
+    setSuccessMessage('Password updated. Other sessions have been signed out.');
     location.reload();
   } else {
     alert(data.error || 'Failed to update password');

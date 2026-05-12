@@ -14,8 +14,8 @@ import { csrfProtection } from '../middleware/csrf.js';
 
 const router = Router();
 
-router.get('/', requireAdmin, getUsers); // all users, for admin dashboard
-router.get('/:id', requireAdmin, getUserById); // not currently used
+router.get('/', requireAdmin, getUsers); // proteced admin dashborad route, returns, all users info with masked email
+router.get('/:id', getUserById); // public, for user profiles with restricted info (no email/is_admin)
 
 router.post(
   '/bio',

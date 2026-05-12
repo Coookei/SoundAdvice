@@ -36,8 +36,7 @@ export const getPostById = async (req, res) => {
   res.json({ post });
 };
 
-// get all APPROVED public posts by user Id (for profile page)
-// profile page is currently viewable just for logged in user, so could remove this endpoint and just call getMyPosts
+// get all APPROVED public posts by user Id (for public profile page)
 export const getPostByUser = async (req, res) => {
   const check = validate(() => requirePositiveInt(req.params.userId, 'user id'));
   if (!check.ok) {

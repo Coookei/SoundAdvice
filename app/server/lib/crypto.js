@@ -44,8 +44,8 @@ export function hashForLookup(value) {
   return crypto.createHmac('sha256', HMAC_KEY).update(value.toLowerCase()).digest('hex');
 }
 
-// hashes a short code (2FA, password change) with a separate secret so a DB leak
-// doesn't expose active codes. used for both login 2FA and password change verification.
+// hashes a short lived auth code or token with a separate secret so a DB leak wont expose active values.
+// used for 2FA codes, magic link tokens, password reset tokens, and forgot/change password email codes.
 export function hashCode(code) {
-  return crypto.createHmac('sha256', process.env['2FA_SECRET']).update(code).digest('hex');
+  return crypto.createHmac('sha256', process.env.AUTH_TOKEN_SECRET).update(code).digest('hex');
 }

@@ -11,6 +11,13 @@ async function loadPosts() {
     article.classList.add('post');
     article.dataset.status = post.status; // store the status on the element so filter can show/hide it
 
+    // add the styles to make posts visually distinct for usability
+    if (post.status === 'pending') {
+      article.classList.add('pending-post');
+    } else if (post.status === 'rejected') {
+      article.classList.add('rejected-post');
+    }
+
     const title = document.createElement('h3');
     const titleLink = document.createElement('a');
     titleLink.textContent = post.title;
@@ -18,8 +25,25 @@ async function loadPosts() {
     title.appendChild(titleLink);
     article.appendChild(title);
 
+    // author name links to their public profil
     const meta = document.createElement('p');
-    meta.textContent = 'By ' + post.username + ' - ' + new Date(post.created_at).toLocaleDateString();
+    meta.appendChild(document.createTextNode('By '));
+
+    const authorLink = document.createElement('a');
+    authorLink.href = '/profile/' + post.user_id;
+    authorLink.textContent = post.username;
+    meta.appendChild(authorLink);
+
+    meta.appendChild(
+      document.createTextNode(
+        ' - ' +
+          new Date(post.created_at).toLocaleString('en-GB', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          })
+      )
+    );
+
     article.appendChild(meta);
 
     const content = document.createElement('p');
@@ -44,6 +68,7 @@ async function loadPosts() {
         if (res.ok) {
           statusElement.textContent = 'Status: approved';
           article.dataset.status = 'approved'; // update post status so filter will work
+          article.classList.remove('pending-post'); // remove pending blue colour, as now approved
 
           approveButton.remove();
           rejectButton.remove();
@@ -56,7 +81,7 @@ async function loadPosts() {
 
       const rejectButton = document.createElement('button');
       rejectButton.textContent = 'Reject';
-      rejectButton.classList.add('link_btn');
+      rejectButton.classList.add('link_btn', 'delete_btn');
       rejectButton.addEventListener('click', async () => {
         const res = await csrfFetch('/api/posts/' + post.id + '/status', {
           method: 'PATCH',
@@ -66,6 +91,8 @@ async function loadPosts() {
         if (res.ok) {
           statusElement.textContent = 'Status: rejected';
           article.dataset.status = 'rejected'; // update post status so filter will work
+          article.classList.remove('pending-post'); // remove pending colour
+          article.classList.add('rejected-post'); // add rejected red colour
 
           approveButton.remove();
           rejectButton.remove();

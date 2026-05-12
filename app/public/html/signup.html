@@ -5,7 +5,13 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/x-icon" href="/images/foodie.ico" />
     <link rel="stylesheet" href="/css/style.css" />
+
+    <!-- purposely do NOT add SRI hash here. Cloudflare updates this script regularly and does not post a pinned hash,
+      so an integrity attribute wld break widget on every update. The CSP script-src restricts loading to challenges.cloudflare.com anyways. -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
     <script src="/js/signup.js" defer></script>
+    <script src="/js/shared.js" defer></script>
   </head>
   <body>
     <header>
@@ -23,7 +29,7 @@
         <input type="email" id="email_input" name="email_input" placeholder="Enter your email..." />
 
         <label for="password_input">Password:</label>
-        <input type="password" id="password_input" name="password_input" placeholder="Choose a password..." />
+        <input type="password" id="password_input" name="password_input" placeholder="Choose a password..." minlength="8" />
 
         <label for="confirm_password_input">Confirm Password:</label>
         <input
@@ -31,10 +37,10 @@
           id="confirm_password_input"
           name="confirm_password_input"
           placeholder="Confirm your password..."
+          minlength="8"
         />
 
-        <label for="captcha_input">Unscramble the word: <span id="captcha_word"></span></label>
-        <input type="text" id="captcha_input" name="captcha_input" placeholder="Type the unscrambled word..." />
+        <div class="cf-turnstile" data-sitekey="__TURNSTILE_SITE_KEY__"></div>
 
         <button id="signup_btn" type="submit">Sign up</button>
       </form>

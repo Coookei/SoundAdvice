@@ -1,4 +1,5 @@
 const form = document.getElementById('code_form');
+const btn = document.getElementById('verify_btn');
 const email = sessionStorage.getItem('forgot_email');
 
 if (!email) {
@@ -18,6 +19,9 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
+  btn.disabled = true;
+  btn.textContent = 'Loading...';
+
   const res = await fetch('/api/auth/forgot-password/verify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -29,8 +33,11 @@ form.addEventListener('submit', async (e) => {
   if (res.ok) {
     sessionStorage.setItem('forgot_token', data.token);
     sessionStorage.removeItem('forgot_email');
+    setSuccessMessage('Code verified. Set a new password.');
     window.location.href = '/forgot-password/reset';
   } else {
+    btn.disabled = false;
+    btn.textContent = 'Verify';
     showError(data.error || 'Something went wrong');
   }
 });

@@ -18,12 +18,13 @@ function readFilters() {
     filters.actor_id = actorId;
   }
 
-  // the from and to inputs use datetime-local type which gives a 'YYYY-MM-DDTHH:mm' format string. postgres can parse this a TIMESTAMPTZ
+  // the from and to inputs use datetime-local type which gives a 'YYYY-MM-DDTHH:mm' format string. postgres can parse this a TIMESTAMPTZ.
+  // convert to an iso string, so tthat postgres will interpret correctly, even if server in diff time zone to the user.
   if (from) {
-    filters.from = from;
+    filters.from = new Date(from).toISOString();
   }
   if (to) {
-    filters.to = to;
+    filters.to = new Date(to).toISOString();
   }
   return filters;
 }
@@ -69,7 +70,10 @@ async function loadLogs() {
     // string cant inject html into admin table
     const rowData = [
       log.id,
-      new Date(log.created_at).toLocaleString(),
+      new Date(log.created_at).toLocaleString('en-GB', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      }),
       log.event_type,
       log.actor_id ?? '',
       log.ip ?? '',

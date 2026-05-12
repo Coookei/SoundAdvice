@@ -22,8 +22,8 @@ const router = Router();
 
 router.get('/', getPosts); // get all approved public posts
 router.get('/search', searchPosts); // search approved posts with a query
-router.get('/my', requireAuth, getMyPosts); // all posts of any status for current authd user
-router.get('/user/:userId', getPostByUser); // approved posts for a given user (profile page)
+router.get('/my', requireAuth, getMyPosts); // all posts of any status for current authd user, used on my posts page
+router.get('/user/:userId', getPostByUser); // approved posts for a given user for the public profile page
 // can create 10 posts every 10 mins to prevent spam
 router.post(
   '/',

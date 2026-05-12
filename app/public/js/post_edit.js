@@ -1,7 +1,7 @@
 const parts = window.location.pathname.split('/');
 const postId = parts[2]; // URL is ' /post/:id/edit'
 
-const form = document.getElementById('editForm');
+const form = document.getElementById('postForm');
 
 async function loadPost() {
   const res = await fetch('/api/posts/' + postId);
@@ -45,6 +45,7 @@ form.addEventListener('submit', async (e) => {
   const data = await res.json();
 
   if (res.ok) {
+    setSuccessMessage('Post updated. It has been resubmitted for approval.');
     window.location.href = '/post/' + postId;
   } else {
     showError(data.error || 'Something went wrong');

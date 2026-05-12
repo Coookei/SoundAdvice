@@ -22,6 +22,7 @@ form.addEventListener('submit', async (e) => {
   const data = await res.json();
 
   if (res.ok && data.redirect) {
+    setSuccessMessage('Welcome back!');
     window.location.href = data.redirect;
   } else {
     showError(data.error || 'Something went wrong');

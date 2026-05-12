@@ -1,9 +1,9 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { generateCaptcha, verifyCaptcha } from '../lib/captcha.js';
 import { hashCode } from '../lib/crypto.js';
 import { sendEmail } from '../lib/email.js';
 import { recordEvent, AuditEvent } from '../lib/audit.js';
+import { verifyTurnstile } from '../lib/turnstile.js';
 import { generateCSRFToken } from '../middleware/csrf.js';
 import { createSession, destroySession, regenerateSession } from '../middleware/session.js';
 import * as authQueries from '../queries/auth.js';
@@ -17,35 +17,55 @@ import {
   requireDigitCode,
   requireString,
 } from '../lib/validate.js';
+import { screenPassword } from '../lib/password_screen.js';
 
-// pre computed hash so we can run bcrypt.compare even when user doesn't exist - prevents timing-based account enumeration
-const FAKE_HASH = await bcrypt.hash('fake-password-for-timing', 12);
-
-export const getCaptcha = (_req, res) => {
-  const { token, scrambled } = generateCaptcha();
-  res.json({ token, scrambled });
-};
+// pre computed hash so we can run bcrypt.compare even when user doesnt exist. this prevents timing based account enumeration
+const FAKE_HASH = await bcrypt.hash('fake-password-for-timing' + process.env.PEPPER, 12);
 
 export const register = async (req, res) => {
-  // apply server side validation
+  // apply server side validation. Turnstile tokens are around 700 chars, so have plenty of space
   const check = validate(() => ({
     username: requireUsername(req.body.username),
     email: requireEmail(req.body.email),
     password: requirePassword(req.body.password),
-    captchaToken: requireString(req.body.captchaToken, 'Captcha token', { min: 1, max: 100, trim: true }),
-    captchaAnswer: requireString(req.body.captchaAnswer, 'Captcha answer', { min: 1, max: 20, trim: true }),
+    turnstileToken: requireString(req.body.turnstileToken, 'Security check', { min: 1, max: 4096, trim: true }),
   }));
   if (!check.ok) {
-    // if any data is malformed, give error message back to user
     return res.status(400).json({ error: check.error });
   }
 
-  const { username, email, password, captchaToken, captchaAnswer } = check.value; // we have cleaned and validated input here
+  const { username, email, password, turnstileToken } = check.value;
 
-  if (!verifyCaptcha(captchaToken, captchaAnswer)) {
-    await recordEvent(req, AuditEvent.REGISTER_CAPTCHA_FAIL);
-    return res.status(400).json({ error: 'Incorrect captcha, try again' });
+  // extra check that the password isnt in the common breached list, or contains the users own username or email.
+  // we doing after initial validation, because need the already cleaned username/email
+  const screen = validate(() => screenPassword(password, { username, email }));
+  if (!screen.ok) {
+    return res.status(400).json({ error: screen.error });
   }
+
+  // verify the Turnstile token with Cloudflare. it is onetime use, expires after 5 mins.
+  // a valid token proves the client passed Cloudflares bot detection (browser fingerprint, behaviour, IP reputation)
+  let passed;
+  try {
+    passed = await verifyTurnstile(turnstileToken, req.ip);
+  } catch (err) {
+    // network error reaching Cloudflare so return a 503 so the user knows it isnt their fault
+    console.warn('Turnstile verify request failed, Cloudflare may be unreachable:', err.message);
+    return res
+      .status(503)
+      .json({ error: 'Security check service is temporarily unavailable, please try again in a moment.' });
+  }
+
+  // otherwise user has failed the captcha check
+  if (!passed) {
+    await recordEvent(req, AuditEvent.REGISTER_CAPTCHA_FAIL);
+    return res.status(400).json({ error: 'Security check failed, please try again' });
+  }
+
+  // record start time so that we can ensure registration attempts will always take at least 1 second,
+  // this is to prevent timings based account enumeration from differences in database and logging times
+  const startedAt = Date.now();
+  const minimumDelayMs = 1000; // 1 second
 
   // hash password with shared pepper, bcrypt generates unique salt
   // for each password hash with cost factor 12
@@ -61,45 +81,69 @@ export const register = async (req, res) => {
       await recordEvent(req, AuditEvent.REGISTER_DUPLICATE, {
         detail: err.constraint?.includes('email') ? 'email' : 'username',
       });
-      return res.json({ message: 'Registration successful' });
+
+      await waitUntilMinimum(startedAt, minimumDelayMs); // ensure registration always takes at least 1 second to prevent timings based account enumeration
+      return res.json({ message: 'Registration successful' }); // always response same message to prevent account enumeration
     }
     throw err;
   }
 
-  res.json({ message: 'Registration successful' });
+  await waitUntilMinimum(startedAt, minimumDelayMs); // ensure registration always takes at least 1 second to prevent timings based account enumeration
+  res.json({ message: 'Registration successful' }); // always response same message to prevent account enumeration
 };
 
 export const login = async (req, res) => {
   const check = validate(() => ({
     email: requireEmail(req.body.email),
     password: requirePassword(req.body.password),
+    turnstileToken: requireString(req.body.turnstileToken, 'Security check', { min: 1, max: 4096, trim: true }),
   }));
   if (!check.ok) {
     // single generic message to avoid leaking which field was malformed
     return res.status(400).json({ error: 'Invalid email or password' });
   }
 
-  const { email, password } = check.value;
+  const { email, password, turnstileToken } = check.value;
+
+  // verify Turnstile first so bots cant credential stuff. valid token proves the request came from a real browser that passed Cloudflares bot detection
+  let passed;
+  try {
+    passed = await verifyTurnstile(turnstileToken, req.ip);
+  } catch (err) {
+    console.warn('Turnstile verify request failed, Cloudflare may be unreachable:', err.message);
+    return res
+      .status(503)
+      .json({ error: 'Security check service is temporarily unavailable, please try again in a moment.' });
+  }
+  if (!passed) {
+    await recordEvent(req, AuditEvent.LOGIN_FAIL, { detail: 'captcha fail' });
+    return res.status(400).json({ error: 'Security check failed, please try again' });
+  }
 
   const user = await authQueries.findByEmail(email);
 
   // always run bcrypt compare to prevent timing attacks
   const valid = user
     ? await bcrypt.compare(password + process.env.PEPPER, user.password)
-    : await bcrypt.compare(password, FAKE_HASH);
+    : await bcrypt.compare(password + process.env.PEPPER, FAKE_HASH);
 
   if (!user || !valid) {
     await recordEvent(req, AuditEvent.LOGIN_FAIL, { detail: user ? 'wrong password' : 'unknown email' });
-    return res.status(401).json({ error: 'Invalid email or password' });
+    return res.status(401).json({ error: 'Invalid email or password' }); // generic message to prevent account enumeration
   }
+
+  // by this point we have a valid user and correct password, so the bycrypt compare is enough to prevent timing based account enumeration
 
   // admin accounts require 2FA, regular users log in directly
   if (user.is_admin) {
     const code = crypto.randomInt(100000, 999999).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-    const codeHash = hashCode(code); // hash with HMAC and 2FA secret stored in .env. attacker unable to get 2fa code even if db compromised
+    const codeHash = hashCode(code); // hash with HMAC and AUTH_TOKEN_SECRET stored in .env. attacker unable to get 2fa code even if db compromised
 
     await authQueries.setEmailCode(user.id, codeHash, expiresAt);
+
+    // we have already checked the users credentials at this point, so the account cant be enumerated as user has basically logged in
+    // so we can await the email send, as the delay does not matter
     await sendEmail(email, 'Your SoundAdvice login code', `Your code is: ${code}. It expires in 10 minutes.`);
 
     // if user starts 2fa flow but then doesnt complete,  and then logs in again in diff browser, without the previous cookie,
@@ -199,6 +243,9 @@ export const forgotRequest = async (req, res) => {
 
   const email = check.value;
 
+  const startedAt = Date.now(); // record start time to prevent timing based account enumeration
+  const minimumDelayMs = 1000; // 1 second
+
   const user = await authQueries.findByEmail(email);
 
   if (user) {
@@ -207,13 +254,19 @@ export const forgotRequest = async (req, res) => {
     await authQueries.setEmailCode(user.id, hashCode(code), expiresAt);
 
     // DO NOT await the email, as otherwise the delay could be used to enumerate accounts
-    sendEmail(email, 'SoundAdvice password reset code', `Your code is: ${code}. It expires in 10 minutes.`);
+    sendEmail(email, 'SoundAdvice password reset code', `Your code is: ${code}. It expires in 10 minutes.`).catch(
+      (err) => {
+        console.error('Failed to send password reset email:', err);
+      }
+    );
+
     await recordEvent(req, AuditEvent.FORGOT_REQUESTED, { actorId: user.id });
   } else {
     await recordEvent(req, AuditEvent.FORGOT_UNKNOWN_EMAIL);
   }
 
-  res.json({ message: 'If that email is registered, a code has been sent.' });
+  await waitUntilMinimum(startedAt, minimumDelayMs); // wait a minimum time to prevent timing based account enumeration
+  res.json({ message: 'If that email is registered, a code has been sent.' }); // always respond same way to prevent account enumeration
 };
 
 // step 2: verify the code and issue a short-lived reset token. this token proves the user
@@ -229,25 +282,32 @@ export const forgotVerify = async (req, res) => {
 
   const { email, code } = check.value;
 
+  const startedAt = Date.now(); // record start time to prevent timings based account enumeration
+  const minimumDelayMs = 1000; // 1 second
+
   const user = await authQueries.findByEmail(email);
   const stored = user ? await authQueries.getEmailCode(user.id) : null;
 
   if (!user || !stored?.email_code || new Date() > new Date(stored.email_code_expires)) {
+    await waitUntilMinimum(startedAt, minimumDelayMs); // unknown email + random code, same response timings
     return res.status(400).json({ error: 'Invalid or expired code' });
   }
 
   const submitted = Buffer.from(hashCode(code), 'hex');
   const storedBuf = Buffer.from(stored.email_code, 'hex');
+
   if (submitted.length !== storedBuf.length || !crypto.timingSafeEqual(submitted, storedBuf)) {
     await recordEvent(req, AuditEvent.FORGOT_BAD_CODE, { actorId: user.id });
+    await waitUntilMinimum(startedAt, minimumDelayMs); // known email + random code, same response timings
     return res.status(400).json({ error: 'Invalid or expired code' });
   }
 
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-  await authQueries.setResetToken(user.id, token, expiresAt);
+  await authQueries.setResetToken(user.id, hashCode(token), expiresAt);
   await authQueries.clearEmailCode(user.id);
 
+  // user gave correct email + correct code, so account existence is not secret, so no need to delay response.
   res.json({ token });
 };
 
@@ -264,9 +324,15 @@ export const forgotReset = async (req, res) => {
 
   const { token, newPassword } = check.value;
 
-  const user = await authQueries.findByResetToken(token);
+  const user = await authQueries.findByResetToken(hashCode(token));
   if (!user || new Date() > new Date(user.password_reset_expires)) {
     return res.status(400).json({ error: 'Invalid or expired reset link' });
+  }
+
+  // screen the new password now that we know who the user is
+  const screen = validate(() => screenPassword(newPassword, { username: user.username, email: user.email }));
+  if (!screen.ok) {
+    return res.status(400).json({ error: screen.error });
   }
 
   const hashed = await bcrypt.hash(newPassword + process.env.PEPPER, 12);
@@ -287,6 +353,9 @@ export const magicLinkRequest = async (req, res) => {
 
   const email = check.value;
 
+  const startedAt = Date.now(); // record start time to prevent timing based account enumeration
+  const minimumDelayMs = 1000; // 1 second
+
   const user = await authQueries.findByEmail(email);
 
   if (user?.is_admin) {
@@ -297,25 +366,37 @@ export const magicLinkRequest = async (req, res) => {
       email,
       'SoundAdvice sign-in method unavailable',
       `This account cannot use magic-link sign in. Please sign in with your password and 2FA verification code instead.`
-    );
+    ).catch((err) => {
+      console.error('Failed to send magic link email:', err);
+    });
+
     await recordEvent(req, AuditEvent.MAGIC_LINK_ADMIN_BLOCKED, { actorId: user.id });
   } else if (user) {
     const token = crypto.randomBytes(32).toString('hex');
     const tokenHash = hashCode(token);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
     await authQueries.setMagicLinkToken(user.id, tokenHash, expiresAt);
 
     // do not generate login link using the req object as could be manipualted, instead we use a BASE_URL env variable
     const link = `${process.env.BASE_URL}/sign-in/magic-link/confirm?token=${token}`;
 
     // DO NOT await the email, as otherwise the delay could be used to enumerate accounts
-    sendEmail(email, 'Your SoundAdvice sign-in link', `Click to sign in: ${link}\n\nThis link expires in 10 minutes.`);
+    sendEmail(
+      email,
+      'Your SoundAdvice sign-in link',
+      `Click to sign in: ${link}\n\nThis link expires in 10 minutes.`
+    ).catch((err) => {
+      console.error('Failed to send magic link email:', err);
+    });
+
     await recordEvent(req, AuditEvent.MAGIC_LINK_REQUEST, { actorId: user.id });
   } else {
     await recordEvent(req, AuditEvent.MAGIC_LINK_UNKNOWN_EMAIL);
   }
 
-  res.json({ message: 'If that account exists, a sign-in link has been sent.' });
+  await waitUntilMinimum(startedAt, minimumDelayMs); // wait a minimum time to prevent timing based account enumeration
+  res.json({ message: 'If that account exists, a sign-in link has been sent.' }); // always respond the same way to prevent account enumeration
 };
 
 // step 2: user clicks link in email which takes them to a confirm page. They click confirm
@@ -349,4 +430,20 @@ export const magicLinkVerify = async (req, res) => {
   await recordEvent(req, AuditEvent.MAGIC_LINK_LOGIN, { actorId: user.id });
 
   res.json({ message: 'Signed in', redirect: '/' });
+};
+
+// helper function used to prevent timing based account enumeration,
+// to always make response times take a minimum amount of time
+const waitUntilMinimum = async (startedAt, minimumMs) => {
+  const duration = Date.now() - startedAt; // calculate how much time passed since request started
+  const remaining = minimumMs - duration; // calculate how long to wait until we reach min response time
+
+  // if we already passed the minimum time, return now
+  if (remaining <= 0) {
+    return;
+  }
+
+  // this simply creates a promise that waits for the remaining time before resolving
+  // and we wait for it here, as it is awaited
+  await new Promise((resolve) => setTimeout(resolve, remaining));
 };

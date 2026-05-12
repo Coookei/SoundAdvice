@@ -1,4 +1,5 @@
 const form = document.getElementById('magic_link_form');
+const btn = document.getElementById('send_link_btn');
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -15,6 +16,9 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
+  btn.disabled = true;
+  btn.textContent = 'Loading...';
+
   const res = await fetch('/api/auth/magic-link/request', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -22,6 +26,9 @@ form.addEventListener('submit', async (e) => {
   });
 
   const data = await res.json();
+
+  btn.disabled = false;
+  btn.textContent = 'Send Link';
 
   if (res.ok) {
     // server will always return same generic message whether the email matched or not

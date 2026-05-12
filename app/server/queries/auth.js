@@ -6,8 +6,9 @@ export const findByEmail = async (email) => {
     hashForLookup(email),
   ]);
   if (!rows[0]) return undefined;
-  // decrypt so the caller can use it (e.g. to send a 2FA email)
-  return { ...rows[0], email: decrypt(rows[0].email_encrypted) };
+  // remove email_encrypted, and replace with the decrypted email
+  const { email_encrypted, ...rest } = rows[0];
+  return { ...rest, email: decrypt(email_encrypted) };
 };
 
 export const createUser = async (username, email, hashedPassword) => {
@@ -44,10 +45,14 @@ export const setResetToken = async (userId, token, expiresAt) => {
 };
 
 export const findByResetToken = async (token) => {
-  const { rows } = await pool.query('SELECT id, password_reset_expires FROM users WHERE password_reset_token = $1', [
-    token,
-  ]);
-  return rows[0];
+  const { rows } = await pool.query(
+    'SELECT id, username, email_encrypted, password_reset_expires FROM users WHERE password_reset_token = $1',
+    [token]
+  );
+  if (!rows[0]) return undefined;
+  // remove email_encrypted, and replace with the decrypted email
+  const { email_encrypted, ...rest } = rows[0];
+  return { ...rest, email: decrypt(email_encrypted) };
 };
 
 export const clearResetToken = async (userId) => {
@@ -61,8 +66,12 @@ export const updatePassword = async (userId, hashedPassword) => {
 };
 
 export const getPasswordAndEmail = async (userId) => {
-  const { rows } = await pool.query('SELECT password, email_encrypted FROM users WHERE id = $1', [userId]);
-  return rows[0];
+  // aslo load username, as used by password screening check when changing password
+  const { rows } = await pool.query('SELECT username, password, email_encrypted FROM users WHERE id = $1', [userId]);
+  if (!rows[0]) return undefined;
+  // remove email_encrypted, and replace with the decrypted email
+  const { email_encrypted, ...rest } = rows[0];
+  return { ...rest, email: decrypt(email_encrypted) };
 };
 
 export const setMagicLinkToken = async (userId, tokenHash, expiresAt) => {

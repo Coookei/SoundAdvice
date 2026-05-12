@@ -42,7 +42,7 @@
       <section>
         <h2>Edit Post</h2>
 
-        <form id="editForm">
+        <form id="postForm">
           <fieldset>
             <legend>Edit your post</legend>
 
@@ -59,11 +59,11 @@
               required
             ></textarea>
 
-            <button type="submit" id="save_btn">Save Changes</button>
-            <p class="small-note">
-              To keep our community safe, all post changes will be reviewed by an admin. The post will not be publicly
-              visible until approved.
+            <p class="warning">
+              <strong>Note:</strong> saving changes will reset this post to <strong>pending</strong> and it will not be
+              publicly visible until an admin reapproves it.
             </p>
+            <button type="submit" id="save_btn">Save Changes</button>
           </fieldset>
         </form>
 

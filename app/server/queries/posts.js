@@ -4,7 +4,7 @@ import pool from '../lib/db.js';
 export const findAllApproved = async () => {
   // in all queries explicitly select fields to return over *, to prevent leaking data
   const { rows } = await pool.query(
-    "SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.status = 'approved' ORDER BY p.created_at DESC"
+    "SELECT p.id, p.user_id, p.title, p.content, p.created_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.status = 'approved' ORDER BY p.created_at DESC"
   );
   return rows;
 };
@@ -21,7 +21,7 @@ export const findById = async (id) => {
 // get only approved posts by user ID (for public profile page view)
 export const findByUser = async (userId) => {
   const { rows } = await pool.query(
-    "SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.user_id = $1 AND p.status = 'approved' ORDER BY p.created_at DESC",
+    "SELECT p.id, p.user_id, p.title, p.content, p.created_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.user_id = $1 AND p.status = 'approved' ORDER BY p.created_at DESC",
     [userId]
   );
   return rows;
@@ -77,7 +77,7 @@ export const searchApproved = async (query) => {
   // for public search only want approved posts AND posts where the title or content contain the search query string
   // ILIKE does caseinsensitive pattern match, and %{query}% means anywhere so 'hello' matches 'Hello', 'a Hello' and 'Hello a'
   const { rows } = await pool.query(
-    "SELECT p.id, p.title, p.content, p.created_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.status = 'approved' AND (p.title ILIKE $1 OR p.content ILIKE $1) ORDER BY p.created_at DESC",
+    "SELECT p.id, p.user_id, p.title, p.content, p.created_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.status = 'approved' AND (p.title ILIKE $1 OR p.content ILIKE $1) ORDER BY p.created_at DESC",
     [`%${query}%`]
   );
   return rows;
