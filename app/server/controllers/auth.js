@@ -226,7 +226,7 @@ export const me = async (req, res) => {
   const user = await userQueries.findById(req.userId);
 
   // explicitly mark response as same origin, so cross origin scripts cannot read the response, this keeps the csrf token only readable by a user using our website directly
-  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin'); //refuses to deliver this response to any document that isnt same origin as me.
 
   // csrf token is derived from the sid so it invalidates whenever the session expires
   res.json({ user: user || null, csrfToken: generateCSRFToken(req.sid) });

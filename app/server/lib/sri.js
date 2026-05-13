@@ -1,6 +1,6 @@
 // Subresource Integrity for our own scripts. on server start we hash every file in
 // /public/js/, then inject the hashes into <script> tags as we serve HTML pages.
-// the browser refuses to run a script whose response bytes don't match our recorded
+// the browser refuses to run a script whose response bytes dont match our recorded
 // hash, so an attacker who modifies a JS file on disk or in transit gets blocked.
 
 import crypto from 'crypto';
@@ -18,7 +18,7 @@ function computeHashes() {
   for (const file of fs.readdirSync(JS_DIR)) {
     if (!file.endsWith('.js')) continue;
     const buffer = fs.readFileSync(path.join(JS_DIR, file));
-    const digest = crypto.createHash('sha384').update(buffer).digest('base64');
+    const digest = crypto.createHash('sha384').update(buffer).digest('base64'); // strong SRI hash algorithm
     map[`/js/${file}`] = `sha384-${digest}`;
   }
   return map;

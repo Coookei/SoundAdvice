@@ -21,6 +21,7 @@ api.use('/logs', logRoutes);
 // API error handling
 api.use(notFoundHandler);
 api.use(errorHandler);
+
 indexRouter.use('/api', api);
 
 export default indexRouter;

@@ -21,7 +21,7 @@ describe('Account Enumeration Prevention', function () {
   it('should return same response for new and duplicate registration', function () {
     const src = fs.readFileSync('app/server/controllers/auth.js', 'utf-8');
 
-    // "Registration successful" should appear twice - once for real, once for duplicate
+    // "Registration successful" should appear twice, once for real, once for duplicate
     const matches = (src.match(/Registration successful/g) || []).length;
     expect(matches).to.equal(2);
   });
@@ -79,8 +79,7 @@ describe('XSS Prevention', function () {
   });
 
   it('should not interpolate user data into innerHTML in frontend', function () {
-    // innerHTML with ${...} template literals is a stored/reflected XSS vector.
-    // empty assignments and static strings don't interpolate so they're fine.
+    // innerHTML with ${...} template literals is a stored/reflected XSS issue
     const jsDir = 'app/public/js';
     const files = fs.readdirSync(jsDir).filter((f) => f.endsWith('.js'));
 

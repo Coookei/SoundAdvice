@@ -95,3 +95,41 @@ This is mitigated by:
 4. Session regenerated after 2FA to prevent fixation of attacker using a known session ID
 5. Secure cookie flag forces the session cookie to only be sent over HTTPS in production, which blocks network sniffing as HTTPS encrypts all traffic including the cookie itself
 6. XSS and CSRF can also lead to session hijacking, which we have protected against
+
+### SQL Injection
+
+Attacker input could be interpreted as SQL commands, letting them read, change, or delete data they shouldnt be able to.
+
+This is mitigated by:
+
+1. Every database call uses a parameterised query with placeholders and values passed as a separate array, so user input is never parsed as SQL.
+2. Strong server-side validation in every controller before each query, so only expected inputs reach the database query.
+3. We use a least-privileged database role that is not a superuser and does not bypass RLS.
+
+To help identify and mitigate SQL injection, all SQL statements are clearly located in the app/server/queries/ directory.
+
+### Cross-site scripting
+
+Cross-site scripting is when an attacker gets their JavaScript onto one of our pages so it runs in another user's browser. That script can then modify the DOM, read what's on the page, steal session data, or perform actions as the victim.
+
+This is mitigated by:
+
+1. User content goes through a whitelist sanitiser that keeps a few safe tags, strips everything else, and escapes <, >, & so typed characters cant turn into markup
+2. Strict input validation in every controller before anything is saved
+3. The frontend shows user data with textContent and createElement, never innerHTML, so the browser shows it as plain text instead of being parsed as HTML
+4. Content Security Policy with script-src 'self' blocks inline and remote scripts even if something did get onto a page
+5. X-Content-Type-Options: nosniff stops the browser running an image or text file as a script
+6. The session cookie is HttpOnly so a script cant read it
+
+### Cross-site request forgery
+
+Cross-site request forgery is when a malicious site tricks a logged in user's browser into making a request to our site using their session cookie, causing an action they did not intend.
+
+This is mitigated by:
+
+1. SameSite=Strict on the session cookie, so the browser never sends it on a cross site request
+2. No CORS headers anywhere, so browsers block other sites from reading our responses by default
+3. Cross-Origin-Resource-Policy is same-origin on /auth/me, so other sites cant embed this and grab the CSRF token
+4. CSRF token: every state changing request needs an `x-csrf-token` header. This is an HMAC of the session id so expires when session does
+5. Sensitive actions re-check identity: changing the password needs the current password plus an emailed code, so a forged request on its own gets nowhere
+6. Origin header check: state changing requests are dropped if the Origin doesnt match our host. This is added on guest routes (login, register, 2FA, forgot password, magic link), where theres no session yet for the token check to use

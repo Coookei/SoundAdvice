@@ -6,9 +6,9 @@ const max_file_size = 5 * 1024 * 1024; // max file size = 5MB
 // folder where uploaded files get saved, also served at /uploads
 const uploadDir = 'uploads';
 
-// split buffer by delimiter
-// deliimiter - used to split raw multipart request into separate sections
 function splitBuffer(buffer, delimiter) {
+  // deliimiter is used to split raw multipart request into separate sections
+
   // array to store split sections
   const parts = [];
 
@@ -20,7 +20,7 @@ function splitBuffer(buffer, delimiter) {
     const index = buffer.indexOf(delimiter, start);
 
     if (index == -1) {
-      // push remaining buffer if no delimiters found
+      // push remaining buffer if no delimiters found, and exit as done
       parts.push(buffer.slice(start));
       break;
     }
@@ -51,7 +51,9 @@ export function parseFileUpload(req) {
     }
 
     // extract boundary - used to separate different sections in the request body
-    const boundaryMatch = contentType.match(/boundary=(.+)$/);
+
+    // in multipart form, the content type header has a boundary value that contains a string
+    const boundaryMatch = contentType.match(/boundary=(.+)$/); // use regex to grab the boundary from the header, one or more characters up to end of string
 
     // boundary not found
     if (!boundaryMatch) {
@@ -59,15 +61,15 @@ export function parseFileUpload(req) {
     }
 
     // extracts boundary string from content type header
-    const boundary = boundaryMatch[1];
+    const boundary = boundaryMatch[1]; // just get the bit inside the brackets, which is the boundary value itself
 
-    // creates delimiter to split form sections
-    const delimiter = Buffer.from(`--${boundary}`);
+    // creates delimiter to split form sections, use buffer.from throughout as request is binary not text, and cant use string operations really on binary data
+    const delimiter = Buffer.from(`--${boundary}`); // as per spec,the deliminator in body actually has the boundary value but with two hyphens prepended
 
     // tracks file upload size
     let size = 0;
 
-    // array to store incoming binary chunks - parts of image
+    // array to store incoming binary chunks which are parts of the file
     const chunks = [];
 
     let aborted = false;
@@ -81,7 +83,7 @@ export function parseFileUpload(req) {
       // increases size counter for each incoming chunk
       size += chunk.length;
 
-      // protection against large requests - if file size too large, stop uplodad
+      // protection against large requests as if file size too large, stop uplodad
       if (size > max_file_size) {
         aborted = true;
         req.destroy(); // STOPS client from sending anymore data
@@ -99,7 +101,7 @@ export function parseFileUpload(req) {
         // combine all chunks into single buffer
         const buffer = Buffer.concat(chunks);
 
-        // split into multipart sections - boundary, header, main content
+        // split into the multipart sections: the boundary, the header, and the actual main content
         const parts = splitBuffer(buffer, delimiter);
 
         let fileBuffer = null;
@@ -112,13 +114,15 @@ export function parseFileUpload(req) {
 
         // loop through each multipart section
         for (const part of parts) {
+          // each multipart section has headers then body, separated by a blank line (\r\n\r\n)
+
           // skip empty parts
           if (!part.length) {
             continue;
           }
 
           // find where headers end
-          const headerEnd = part.indexOf('\r\n\r\n');
+          const headerEnd = part.indexOf('\r\n\r\n'); // position of the blank line ending the headers
 
           // skip if header + body split not found
           if (headerEnd == -1) {
@@ -126,29 +130,32 @@ export function parseFileUpload(req) {
           }
 
           // extract headers
-          // convert everything to string
           const header = part.slice(0, headerEnd).toString();
 
-          // extract file content after headers
+          // extract body content after headers, add +4 to get past the \r\n\r\n to get to first byte of body. \r\n is at end of body before next boudnary so we get up to just before that, and have whole body
           const body = part.slice(headerEnd + 4, part.lastIndexOf('\r\n'));
 
           // no filename means this section is a normal text field not a file, so grab its name + value and move on
           if (!header.includes('filename=')) {
-            const nameMatch = header.match(/name="([^"]+)"/);
+            // this is a normal form field such as a post tile or body text
+            const nameMatch = header.match(/name="([^"]+)"/); // capturing group (), to get one or more characters that are NOT " (^ is negating here)
             if (nameMatch) {
-              fields[nameMatch[1]] = body.toString().trim();
+              fields[nameMatch[1]] = body.toString().trim(); // extract name from between brackets and save name=value to fields map
             }
             continue;
           }
+          // otherwise we have filename so this is file section
 
           // store data
           fileBuffer = body;
+
+          // know we check file signatures, known as a magic-bytes check
 
           // PNG signature
           // check first 8 bytes of file + compare with known PNG signature
           isPNG = fileBuffer.slice(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
 
-          // JPEG signature - in hexadecimal
+          // JPEG signature, in hexadecimal
           // checks if file is JPEG using first 2 bytes
           isJPEG = fileBuffer[0] == 0xff && fileBuffer[1] == 0xd8;
 

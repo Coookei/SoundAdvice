@@ -4,12 +4,12 @@
 // this acts as defence in depth, even if our XSS sanitiser misses something the browser will refuse to run it
 const CSP = [
   "default-src 'self'", // fallback rule for any unset rule, this defaults to only our origin
-  "script-src 'self' https://challenges.cloudflare.com", // only our own js files plus Cloudflare Turnstile widget
+  "script-src 'self' https://challenges.cloudflare.com", // only our own js files plus Cloudflare Turnstile widget, blocks inline js
   "style-src 'self' https://cdnjs.cloudflare.com", // allows our own CSS and Font Awesome CDN, but no inline styles
   "font-src 'self' https://cdnjs.cloudflare.com", // allows Font Awesome icons font files
   "img-src 'self' data:", // allows our own images plus inline data URIs
   "connect-src 'self'", // fetch/XHR only to our own API backend
-  "frame-src https://challenges.cloudflare.com", // Turnstile renders its challenge inside an iframe served from Cloudflare
+  'frame-src https://challenges.cloudflare.com', // Turnstile renders its challenge inside an iframe served from Cloudflare
   "object-src 'none'", // block <object>, <embed>, legacy plugin attack vectors, these are v legacy so not used in modern sites
   "base-uri 'self'", // block <base href="evil.com"> hijacking relative URLs on a page
   "form-action 'self'", // forms can only submit to us, CSRF defence in depth

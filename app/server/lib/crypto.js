@@ -47,5 +47,5 @@ export function hashForLookup(value) {
 // hashes a short lived auth code or token with a separate secret so a DB leak wont expose active values.
 // used for 2FA codes, magic link tokens, password reset tokens, and forgot/change password email codes.
 export function hashCode(code) {
-  return crypto.createHmac('sha256', process.env.AUTH_TOKEN_SECRET).update(code).digest('hex');
+  return crypto.createHmac('sha256', process.env.AUTH_TOKEN_SECRET).update(code).digest('hex'); // is binary so convert to store as text in DB
 }

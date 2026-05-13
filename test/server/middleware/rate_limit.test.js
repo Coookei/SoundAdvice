@@ -19,6 +19,7 @@ describe('Rate Limiting', function () {
       };
       await new Promise((resolve) => {
         limiter(req, res, () => resolve());
+
         if (res.statusCode === 429) {
           lastStatus = 429;
           resolve();
