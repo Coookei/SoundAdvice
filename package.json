@@ -10,8 +10,9 @@
     "test": "NODE_ENV=test mocha --recursive",
     "format": "prettier --write ."
   },
-  "author": "UG17",
+  "author": "Tom, Olly, Grace",
   "packageManager": "pnpm@10.32.1",
+  "engines": { "node": ">=18" },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
