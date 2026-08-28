@@ -66,9 +66,10 @@ const formatRowForHash = (row) => {
 };
 
 export const computeRowHash = (row) => {
+  // gives a deterministic fingerprint for this row
   const stringAuditLog = formatRowForHash(row); // convert log entry to predictable string format
 
-  return crypto.createHash('sha256').update(stringAuditLog).digest('hex'); // this hash is the row_hash value in the db
+  return crypto.createHash('sha256').update(stringAuditLog).digest('hex'); // this fingerprint hash is the row_hash value in the db
 };
 
 export const computeHmac = (rowHash) => {

@@ -12,7 +12,7 @@ export const findAllApproved = async () => {
 // find a post by its post id
 export const findById = async (id) => {
   const { rows } = await pool.query(
-    'SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.id = $1',
+    'SELECT p.id, p.user_id, p.title, p.content, p.status, p.created_at, p.updated_at, p.image_path, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.id = $1',
     [id]
   );
   return rows[0];
@@ -44,19 +44,19 @@ export const findAll = async () => {
   return rows;
 };
 
-export const create = async (userId, title, content) => {
+export const create = async (userId, title, content, imagePath = null) => {
   const { rows } = await pool.query(
-    'INSERT INTO posts (user_id, title, content) VALUES ($1, $2, $3) RETURNING id, user_id, title, content, status, created_at, updated_at',
-    [userId, title, content]
+    'INSERT INTO posts (user_id, title, content, image_path) VALUES ($1, $2, $3, $4) RETURNING id, user_id, title, content, status, created_at, updated_at',
+    [userId, title, content, imagePath]
   );
   return rows[0];
 };
 
-export const update = async (id, title, content, status = 'pending') => {
+export const update = async (id, title, content, imagePath = null, status = 'pending') => {
   // default to when updating post should go back to pending
   const { rows } = await pool.query(
-    'UPDATE posts SET title = $1, content = $2, status = $3, updated_at = NOW() WHERE id = $4 RETURNING id, user_id, title, content, status, created_at, updated_at',
-    [title, content, status, id]
+    'UPDATE posts SET title = $1, content = $2, image_path = $3, status = $4, updated_at = NOW() WHERE id = $5 RETURNING id, user_id, title, content, status, created_at, updated_at',
+    [title, content, imagePath, status, id]
   );
   return rows[0];
 };

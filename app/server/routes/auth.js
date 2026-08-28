@@ -29,6 +29,7 @@ router.post(
   '/login',
   requireSameOrigin,
   requireGuest,
+  // rateLimit({ max: 2, windowMs: 10 * 60 * 1000, blockMs: 15 * 1000 }), // FOR DEMO REDUCED VALUES
   rateLimit({ max: 5, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 }),
   login
 );

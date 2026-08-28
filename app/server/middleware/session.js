@@ -67,7 +67,7 @@ export async function sessionMiddleware(req, res, next) {
 // pending = true, session is only for holding userId until 2FA is completed
 // isAdmin = true, session is for admin user and should have shorter expiry
 export async function createSession(res, userId, pending = false, isAdmin = false) {
-  // the sid cant be guessed as massive size so no need to sign it
+  // the sid cant be guessed as massive size so no need to sign it, around 1.16 x 10 ^77 values
   const sid = crypto.randomBytes(32).toString('hex');
   const maxAge = pending ? PENDING_MAX_AGE : isAdmin ? ADMIN_MAX_AGE : USER_MAX_AGE;
   const expiresAt = new Date(Date.now() + maxAge);

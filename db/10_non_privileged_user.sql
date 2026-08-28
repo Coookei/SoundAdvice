@@ -2,7 +2,7 @@
 -- It is important to use a non privilged user without RLS bypass permissions, as otherwise the database user can bypass the audit log integrity RLS rules we set in migration 09.
 
 -- Make sure you have a new database role:
-CREATE ROLE soundadvice WITH LOGIN PASSWORD 'password';
+CREATE ROLE soundadvice WITH LOGIN PASSWORD 'change_this_password'; -- set your own user and password here
 
 -- Now we grant our new user permission to read and write to public tables, but restrict the audit logs table.
 -- Change 'soundadvice' to your database user below if different, before running the following.

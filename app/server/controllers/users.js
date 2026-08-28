@@ -140,6 +140,11 @@ export const updateProfilePicture = async (req, res) => {
   try {
     const { fileBuffer, fileExt } = await parseFileUpload(req);
 
+    // need an actual file here, a profile pic isnt optional like a post image is
+    if (!fileBuffer) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
     // only allow PNG explicitly
     if (fileExt !== 'png') {
       return res.status(400).json({ error: 'Only PNG allowed' });

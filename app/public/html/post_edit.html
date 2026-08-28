@@ -59,6 +59,13 @@
               required
             ></textarea>
 
+            <img id="current_image" class="post_img hidden" alt="Current post image" />
+            <label id="remove_image_label" class="hidden">
+              <input id="remove_image" type="checkbox" /> Remove current image
+            </label>
+            <label for="image_field">Replace image (optional):</label>
+            <input id="image_field" name="image_field" type="file" accept="image/png, image/jpeg" />
+
             <p class="warning">
               <strong>Note:</strong> saving changes will reset this post to <strong>pending</strong> and it will not be
               publicly visible until an admin reapproves it.

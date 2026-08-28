@@ -25,7 +25,17 @@ async function loadPost() {
   authorElement.href = '/profile/' + post.user_id; // link author name to their public profile
 
   // innerHTML is safe here as post.content is sanitised on write to only allow specific HTML tags
-  document.getElementById('postContent').innerHTML = '<p>' + post.content + '</p>';
+  const postContent = document.getElementById('postContent');
+  postContent.innerHTML = '<p>' + post.content + '</p>';
+
+  // show the image under the post text if it has one
+  if (post.image_path) {
+    const img = document.createElement('img');
+    img.src = post.image_path;
+    img.alt = 'Post image';
+    img.classList.add('post_img');
+    postContent.appendChild(img);
+  }
 
   if (post.status === 'pending') {
     // for pending posts, we want a CLEAR visual indication in the UI for usability

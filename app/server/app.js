@@ -18,8 +18,8 @@ if (process.env.NODE_ENV === 'production') {
 
 // middleware
 app.use(headersMiddleware); // security headers applied to every response
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json()); // req.body parsing
+app.use(express.urlencoded({ extended: false })); // express read form data submitted via a normal html form
 app.use(sessionMiddleware); // attach req.userId from session cookie on every request
 app.use('/html', (_req, res) => res.status(403).send('Forbidden')); // block direct access to html files, only served via protected page routes
 app.use(express.static(join(__dirname, '../public'))); // serve ALL static assets from public dir, while protecting from traversing out in url eg ../../
