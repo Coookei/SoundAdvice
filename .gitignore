@@ -1,8 +1,6 @@
 node_modules
 .env
-*.md
 *.pdf
-!README.md
 logs/*.jsonl
 .vscode
 uploads/
