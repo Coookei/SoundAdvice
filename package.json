@@ -1,9 +1,11 @@
 {
   "name": "soundadvice",
   "version": "1.0.0",
-  "description": "A Redit-style music help blog, focusing on secure coding over user interface.",
+  "description": "A Reddit-style forum for musicians where every security control is hand-written: sessions, CSRF, an HTML sanitiser, 2FA, encrypted-at-rest email and a tamper-evident audit log, on four dependencies.",
   "main": "app/server/index.js",
   "type": "module",
+  "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "nodemon app/server/index.js",
     "start": "node app/server/index.js",
