@@ -1,13 +1,31 @@
+<div align="center">
+
 # SoundAdvice
 
-Every security control in this application is hand-written.
+**Every security control in this application is hand-written.**
 
-The app is a music advice blog where users help each other improve. Anyone can
+![dependencies](https://img.shields.io/badge/dependencies-4-blue)
+![tests](https://img.shields.io/badge/tests-59_passing-brightgreen)
+![OWASP ZAP](https://img.shields.io/badge/OWASP_ZAP-0_high_%C2%B7_0_medium-8A2BE2)
+![node](https://img.shields.io/badge/node-%E2%89%A518-339933)
+![license](https://img.shields.io/badge/license-MIT-lightgrey)
+
+[![Security flyer](https://img.shields.io/badge/📄_SECURITY_FLYER_%28PDF%29-c0392b?style=for-the-badge)](flyer.pdf)
+[![Screenshots](https://img.shields.io/badge/🖼_SCREENSHOTS-2ea44f?style=for-the-badge)](#screenshots)
+[![Attacker app](https://img.shields.io/badge/🎯_ATTACKER_APP-1f6feb?style=for-the-badge)](#how-this-was-tested)
+
+<a href="flyer.pdf"><img src="screenshots/flyer-page-1.png" width="46%" alt="Flyer page 1"></a>
+<a href="flyer.pdf"><img src="screenshots/flyer-page-2.png" width="46%" alt="Flyer page 2"></a>
+
+</div>
+
+The app is a music advice forum where users help each other improve. Anyone can
 post a question, and an admin approves it before it goes public so the quality
-stays high. That part is mostly a pretext: it needs accounts, roles, sessions,
-user-submitted HTML and file uploads, which makes it a realistic thing to attack.
+stays high. The forum itself isn't really the point: it needs accounts, roles,
+sessions, user-submitted HTML and file uploads, which makes it a realistic thing
+to attack.
 
-The platform runs on four packages: express, pg, bcrypt and dotenv. That's the
+The whole thing runs on four packages: express, pg, bcrypt and dotenv. That's the
 entire dependency list and it's deliberate. Sessions, CSRF tokens, the HTML
 sanitiser, the multipart file parser, rate limiting, password screening,
 encrypted email storage with a searchable lookup index, and a hash-chained
@@ -23,7 +41,70 @@ Two exceptions, both on purpose: bcrypt for password hashing and Node's crypto
 for primitives. Writing your own AES is a bad idea.
 
 Built by a team of three. The work went into the backend and the threat model,
-not the interface. The UI is deliberately plain and simple.
+not the interface.
+
+## Table of contents
+
+**The project tour**: [Screenshots](#screenshots) · [Flyer](#flyer) · [Technology](#technology) · [Structure](#structure)
+
+**The security work**: [Features](#features) · [How this was tested](#how-this-was-tested) · [Core vulnerabilities mitigated](#core-security-vulnerabilities-mitigated): [account enumeration](#account-enumeration), [session hijacking](#session-hijacking), [SQL injection](#sql-injection), [XSS](#cross-site-scripting), [CSRF](#cross-site-request-forgery)
+
+**Running the project**: [Setup](#setup) · [Scripts](#scripts) · [Database migrations](#database-migrations) · [Deployment notes](#deployment-notes)
+
+**Reference**: [Pages](#pages) · [API](#api) · [License](#license)
+
+## Screenshots
+
+The UI is deliberately plain and these are not trying to look good. They are here
+to show the controls described below sitting on a working app: Turnstile on the
+login form, the moderation queue, the audit log viewer and the rest.
+
+<details>
+<summary>Eight screens from the app</summary>
+
+![Sign in](screenshots/sign-in.png)
+
+**Sign in**: Email and password behind a Cloudflare Turnstile check, with the magic-link option and the forgot-password flow below it
+
+![Magic-link email](screenshots/magic-link-email.png)
+
+**Magic-link email**: The one-time link as it arrives, sent through Resend, good for 10 minutes
+
+![A post and its comments](screenshots/post-with-comments.png)
+
+**A post and its comments**: An approved post with its comment thread. Edit and delete are showing because the signed-in user is an admin
+
+![Public profile, signed in](screenshots/profile-signed-in.png)
+
+**Public profile, signed in**: That post title is literally `alert('XSS demo');`. The sanitiser stored it as text and the page renders it as text
+
+![Public profile, signed out](screenshots/profile-signed-out.png)
+
+**Public profile, signed out**: The same page as a guest. The endpoint behind it never returns an email or the admin flag
+
+![Account settings](screenshots/account-settings.png)
+
+**Account settings**: Profile picture, bio, and a password change that needs the current password and an emailed code
+
+![Moderation queue](screenshots/admin-approval.png)
+
+**Moderation queue**: Pending posts waiting on an admin, filterable by pending, approved or rejected
+
+![Audit log](screenshots/admin-logs.png)
+
+**Audit log**: Typed events with filters, and the Verify Integrity button that walks the hash chain
+
+</details>
+
+## Flyer
+
+[`flyer.pdf`](flyer.pdf) is a two-page flyer that explains a selection of SoundAdvice's
+security measures to a non-technical reader: encryption at rest, the
+tamper-evident audit log, magic-byte file checks, least privilege and NIST
+password guidelines. It also includes the OWASP ZAP result: all 31 endpoints
+scanned, with 0 high-severity, 0 medium-severity and 0 confirmed
+vulnerabilities. Those numbers came from a single baseline scan at the time, not
+a guarantee about the current commit.
 
 ## Technology
 
@@ -58,95 +139,9 @@ logs/             # created at runtime; mirrors the audit_log db table as a seco
 uploads/          # created at runtime; user profile pictures and post images
 ```
 
-## Setup
-
-Requires Node.js 18 or newer, a PostgreSQL database, and pnpm, plus a Resend API key and Cloudflare Turnstile keys (both free to sign up for). You will also need openssl,
-or any other way to generate random hex strings, for the secrets in `.env`.
-
-
-**1. Install dependencies**
-
-If you do not have pnpm installed yet, follow the [pnpm installation guide](https://pnpm.io/installation).
-
-```bash
-pnpm install
-```
-
-**2. Create the database and apply migrations**
-
-Edit `db/10_non_privileged_user.sql` first to set your role name and a strong
-password. Run the migrations as a superuser in your PostgreSQL database. Migration 10 creates the non-privileged role the app itself will run as.
-
-```bash
-createdb soundadvice
-for f in db/*.sql; do psql -d soundadvice -f "$f"; done
-```
-
-**3. Set up environment variables**
-
-Copy `.env.example` to `.env` and fill in with your credentials. All variables have been commented to help you with setup.
-
-`DATABASE_URL` should point at the non-privileged role from migration
-10, not your superuser account. The audit log's tamper protections rely on the
-app running without RLS bypass.
-
-**4. Run the development server**
-
-```
-pnpm run dev
-```
-
-The app will now be accessible at: http://localhost:3000
-
-**5. Create an admin user**
-
-Register through the app, then promote yourself directly in the database:
-```sql
-UPDATE users SET is_admin = TRUE WHERE username = 'your_username';
-```
-
-There is deliberately no way to grant admin from inside the app. 
-
-At least one admin is required or no post can ever be approved.
-
-Note that admin accounts require email 2FA on every login, so make sure your
-Resend key works before promoting your account.
-
-**6. Optional: run the attacker app**
-
-`node attacker-app/server.js` serves a page on http://localhost:4000
-that can probe the running app's CSRF and cross-origin defences.
-
-## Scripts
-
-```bash
-pnpm dev      # start dev server with reloading
-pnpm test     # runs all unit tests
-pnpm format   # format all files with prettier
-pnpm start    # start production server
-```
-
-## Database Migrations
-
-To make and keep track of changes to the database, create a new SQL file in the db/ directory, incrementing the numbered prefix in the filename. E.g. 01_init.sql, 02_add_phone_to_users.sql. The file can then be ran to update the database.
-
-## Usability Features
-
-- Show error messages: failed client side validation, and rate limiting
-- Show loading state: disable buttons and change text to loading so users never left waiting
-- Middleware redirection: if not signed in, sent to sign in; if signed in, redirected from auth pages
-- Show success messages: show useful messages even after being redireced across pages, for example after signing in
-- Pending post flow: clear note when creating or editing posts that they will go into a pending process, and visually distinct UI for pending and rejected posts
-- Usability: different colour buttons for different actions eg edit/delete post
-
-## Deployment notes
-
-- Use HTTPS certificate to encrypt traffic
-- Firewall the server and the database with an application firewall like WAF
-
 ## Features
 
-The five classic web vulnerabilities have their own section below. This covers
+The five classic web vulnerabilities have their own section at [Core security vulnerabilities mitigated](#core-security-vulnerabilities-mitigated). This covers
 everything else.
 
 ### The app
@@ -156,12 +151,21 @@ everything else.
 - Moderation queue: new posts stay pending until an admin approves or rejects them
 - Authors can see their own pending and rejected posts, with distinct styling for each
 
+### Usability
+
+- Show error messages: failed client-side validation, and rate limiting
+- Show loading state: disable buttons and change text to loading so users are never left waiting
+- Middleware redirection: if not signed in, sent to sign in; if signed in, redirected from auth pages
+- Show success messages: show useful messages even after being redirected across pages, for example after signing in
+- Pending post flow: clear note when creating or editing posts that they will go into a pending process, and visually distinct UI for pending and rejected posts
+- Different colour buttons for different actions, e.g. edit/delete post
+
 ### Authentication flows
 
 - Email 2FA on admin accounts: 6-digit code, 10 minute expiry, 3 attempts before you start over
 - Passwordless magic-link login, deliberately blocked for admins since it skips 2FA
 - Forgot password in three steps: request a code, verify it, then reset with a short-lived token
-- Changing your password needs the current password *and* an emailed code
+- Changing your password needs the current password _and_ an emailed code
 - A password change logs out every other session but keeps the current one alive
 
 ### Password handling
@@ -175,7 +179,7 @@ everything else.
 
 - Email addresses encrypted with AES-256-GCM, fresh IV per record
 - Lookups still work through an HMAC blind index, keyed with a separate key derived from the encryption key
-- 2FA codes, magic-link tokens and reset tokens stored as HMACs, so a database dump has nothing usable in it
+- 2FA codes, magic-link tokens and reset tokens stored as HMACs, so none of them are usable out of a database dump
 - Admin user list shows masked emails, and the public profile endpoint never returns an email or admin flag
 
 ### Tamper-evident audit log
@@ -190,7 +194,7 @@ everything else.
 
 ### Abuse prevention
 
-- Reusable rate limiter with independent budgets per route: 3 per 10 minutes on anything that sends an email, 5 on login and registration, 10 on posts, 15 on comments
+- Reusable rate limiter with independent budgets per route, all per 10 minutes: 3 on the forgot-password and magic-link requests, 5 on login and registration, 10 on post creation, 15 on comment creation, 20 on edits and deletes
 - Going over blocks that IP for 10 to 15 minutes depending on the route.
 - Cloudflare Turnstile on login and registration, verified server-side, with a clean 503 if Cloudflare is unreachable
 - `trust proxy` set in production so limits key off the real client IP rather than the proxy's
@@ -233,15 +237,67 @@ everything else.
 - `Referrer-Policy: strict-origin-when-cross-origin` keeps full URLs from leaking off-site
 - `Cache-Control: no-store` so a logged-out user can't hit back and see a stale authenticated page
 
-### Vulnerabilities Verified
+## How this was tested
 
-- `attacker-app/` is a separate origin that demonstrates the CSRF and cross-origin defences holding
-- 59 unit tests across the server code
-- Manual demos for what unit tests can't cover: uncomment the inline script in `index.html` and watch CSP block it, run `testRowLevelSecurity()` to confirm the database rejects edits to the audit log, or tamper with an audit row and let the chain verifier find it, or change a byte of any JS file in production and watch the browser refuse to run it. Vulnerabilities were tested manually like this.
+Each of the five vulnerabilities below has its own evidence: a behavioural test
+suite, a manual check you can reproduce against the running app, or both.
 
-## Core Security Vulnerabilities Mitigated
+**Account enumeration** is shown manually: register with an email that is
+already taken and the success message, and the time it takes to arrive, are
+identical to a fresh registration. The forgot-password and magic-link forms
+respond the same way whether or not the account exists. The audit log still
+records the duplicate attempt, so an admin can see what really happened while
+the response gives nothing away.
 
-### Account Enumeration
+**Session hijacking** is easy to check from the browser: devtools shows the
+session cookie carrying `HttpOnly` and `SameSite=Strict` (plus `Secure` in
+production), and `document.cookie` in the console comes back empty. Revocation
+is quick to check too: log out, replay the old cookie value, and it's dead,
+because sessions are destroyed server-side rather than just cleared from the
+browser. The two practical ways to steal a session, XSS and CSRF, have their
+own coverage below.
+
+**SQL injection** is covered in layers: every statement lives in
+`app/server/queries/`, a static check fails if any of them interpolates input
+into SQL, and the controller unit tests assert that malformed input gets a 400
+before any query runs. Or just try it: `' OR 1=1 --` in the search box is
+handled as literal text and matches nothing.
+
+**Cross-site scripting** has the strongest automated coverage: the sanitiser
+has a behavioural suite in `test/server/lib/sanitize.test.js` that checks it
+tag by tag: whitelisted tags survive, everything else is stripped, event
+handlers and `javascript:` URLs are removed. The profile screenshot in
+[Screenshots](#screenshots) shows the end result: a post titled
+`alert('XSS demo');` rendered as harmless text. The CSP backstop has its own
+entry in the table below.
+
+**Cross-site request forgery** is attacked for real. `attacker-app/` serves a
+page on a separate origin that fires the actual attacks at the running app: a
+`fetch` of `/api/auth/me` to try to read the CSRF token, a `POST` to
+`/api/users/bio` with the victim's cookie, and a forged login as both JSON and
+a plain HTML form. Every one fails, and the page shows how.
+
+Beyond the five, 59 unit tests in all (`pnpm test`) cover password screening,
+rate-limit budgets, and ownership and validation on every post and comment
+route.
+
+The five above get full write-ups because their evidence comes from several
+sources. Other controls we tested:
+
+| Control                      | How to see it hold                                                                                                                                                    |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CSP blocks inline script     | Uncomment the `alert('1')` script in `app/public/html/index.html` and load the page                                                                                   |
+| Audit log is append-only     | Uncomment the `testRowLevelSecurity(1)` call in `app/server/queries/audit.js`; Postgres rejects both the UPDATE and the DELETE                                        |
+| Hash chain is tamper-evident | Edit an audit row directly in the database, then verify the chain from `/admin/logs`; it names the first row that fails, and why                                      |
+| SRI catches modified scripts | Change a byte of any file in `app/public/js` with `NODE_ENV=production`; the browser refuses to run it                                                                |
+| Uploads check magic bytes    | Rename any non-image file to `.png` and upload it as a profile picture; the parser reads the file's bytes, not its name, and rejects it                               |
+| Rate limiting in the UI      | Swap in the reduced-budget limiter marked `FOR DEMO` on the login route in `app/server/routes/auth.js`, then fail three sign-ins; the UI shows the rate-limit message |
+
+The OWASP ZAP baseline scan result is in the [Flyer](#flyer) section.
+
+## Core security vulnerabilities mitigated
+
+### Account enumeration
 
 The register, login, forgot password request, forgot password verify, and magic link request endpoints could all be used to check for existence of an account.
 
@@ -250,9 +306,9 @@ This is mitigated by:
 1. Generic response messages on success and failure
 2. Constant time responses: fake bcrypt compare, remove email delay, and a minimum function response time
 
-### Session Hijacking
+### Session hijacking
 
-Session cookies could be stolen, guessed, or fixated and used to impersonate a logged in user.
+Session cookies could be stolen, guessed, or fixated and used to impersonate a logged-in user.
 
 This is mitigated by:
 
@@ -263,9 +319,9 @@ This is mitigated by:
 5. Secure cookie flag forces the session cookie to only be sent over HTTPS in production, which blocks network sniffing as HTTPS encrypts all traffic including the cookie itself
 6. XSS and CSRF can also lead to session hijacking, which we have protected against
 
-### SQL Injection
+### SQL injection
 
-Attacker input could be interpreted as SQL commands, letting them read, change, or delete data they shouldnt be able to.
+Attacker input could be interpreted as SQL commands, letting them read, change, or delete data they shouldn't be able to.
 
 This is mitigated by:
 
@@ -277,27 +333,204 @@ To help identify and mitigate SQL injection, all SQL statements are clearly loca
 
 ### Cross-site scripting
 
-Cross-site scripting is when an attacker gets their JavaScript onto one of our pages so it runs in another user's browser. That script can then modify the DOM, read whats on the page, steal session data, or perform actions as the user.
+Cross-site scripting is when an attacker gets their JavaScript onto one of our pages so it runs in another user's browser. That script can then modify the DOM, read what's on the page, steal session data, or perform actions as the user.
 
 This is mitigated by:
 
 1. User content goes through a whitelist sanitiser that keeps a few safe tags, strips everything else
 2. Strict input validation in every controller before anything is saved
 3. The frontend builds the DOM with textContent and createElement rather than
-   innerHTML, so user data is shown as plain text instead of being parsed as HTML
-4. Content Security Policy with script-src 'self' blocks inline and remote scripts even if something did get onto a page
+   innerHTML, so user data is shown as plain text instead of being parsed as HTML.
+   The post body is the one exception, rendering the tags the sanitiser allows
+4. Content Security Policy with script-src limited to 'self' and the Turnstile widget blocks inline and any other remote scripts even if something did get onto a page
 5. X-Content-Type-Options: nosniff stops the browser running an image or text file as a script
-6. The session cookie is HttpOnly so a script cant read it
+6. The session cookie is HttpOnly so a script can't read it
 
 ### Cross-site request forgery
 
-Cross-site request forgery is when a malicious site tricks a logged in users browser into making a request to our site using their session cookie, causing an action they did not intend.
+Cross-site request forgery is when a malicious site tricks a logged-in user's browser into making a request to our site using their session cookie, causing an action they did not intend.
 
 This is mitigated by:
 
-1. SameSite=Strict on the session cookie, so the browser never sends it on a cross site request
+1. SameSite=Strict on the session cookie, so the browser never sends it on a cross-site request
 2. No CORS headers anywhere, so browsers block other sites from reading our responses by default
-3. Cross-Origin-Resource-Policy is same-origin on /auth/me, so other sites cant embed this and grab the CSRF token
-4. CSRF token on every state changing request needs an `x-csrf-token` header. This is an HMAC of the session id so expires when session does
-5. Sensitive actions recheck identity: changing the password needs the current password and an emailed code, so a forged request on its own wont work
-6. Origin header check: state changing requests are ignored if the origin doesnt match our host. This is added on guest routes (login, register, 2FA, forgot password, magic link), where theres no session yet for the token check to use
+3. Cross-Origin-Resource-Policy is same-origin on /api/auth/me, so other sites can't embed this and grab the CSRF token
+4. CSRF token on every state-changing request needs an `x-csrf-token` header. This is an HMAC of the session id so expires when session does
+5. Sensitive actions recheck identity: changing the password needs the current password and an emailed code, so a forged request on its own won't work
+6. Origin header check: every state-changing request is rejected if the origin is missing or doesn't match our host. This runs alongside the token check above, and is the only check available on guest routes (login, register, 2FA, forgot password, magic link), where there's no session yet to derive a token from
+
+## Setup
+
+Requires Node.js 18 or newer, a PostgreSQL database, and pnpm, plus a Resend API key and Cloudflare Turnstile keys (both free to sign up for). You will also need openssl,
+or any other way to generate random hex strings, for the secrets in `.env`.
+
+**1. Install dependencies**
+
+If you do not have pnpm installed yet, follow the [pnpm installation guide](https://pnpm.io/installation).
+
+```bash
+pnpm install
+```
+
+**2. Create the database and apply migrations**
+
+Edit `db/10_non_privileged_user.sql` first to set your role name and a strong
+password. Run the migrations as a superuser in your PostgreSQL database. Migration 10 creates the non-privileged role the app itself will run as.
+
+```bash
+createdb soundadvice
+for f in db/*.sql; do psql -d soundadvice -f "$f"; done
+```
+
+**3. Set up environment variables**
+
+Copy `.env.example` to `.env` and fill in with your credentials. All variables have been commented to help you with setup.
+
+`DATABASE_URL` must point at the non-privileged role from migration
+10, not your superuser account. The audit log's tamper protections rely on the
+app running without RLS bypass. On startup the app queries its own role and
+**refuses to start** if it connected as a superuser or as a role with RLS bypass.
+
+**4. Run the development server**
+
+```
+pnpm run dev
+```
+
+The app will now be accessible at: http://localhost:3000
+
+**5. Create an admin user**
+
+Register through the app, then promote yourself directly in the database:
+
+```sql
+UPDATE users SET is_admin = TRUE WHERE username = 'your_username';
+```
+
+There is deliberately no way to grant admin from inside the app.
+
+At least one admin is required or no post can ever be approved.
+
+Note that admin accounts require email 2FA on every login, so make sure your
+Resend key works before promoting your account.
+
+**6. Optional: run the attacker app**
+
+`node attacker-app/server.js` serves a page on http://localhost:4000
+that can probe the running app's CSRF and cross-origin defences.
+
+### Scripts
+
+```bash
+pnpm dev      # start dev server with reloading
+pnpm test     # runs all unit tests
+pnpm format   # format all files with prettier
+pnpm start    # start production server
+```
+
+### Database migrations
+
+To make and keep track of changes to the database, create a new SQL file in the db/ directory, incrementing the numbered prefix in the filename. E.g. 01_init.sql, 02_add_phone_to_users.sql. The file can then be run to update the database.
+
+### Deployment notes
+
+- Set `NODE_ENV=production`. It gates the Secure cookie flag, `trust proxy` for real client IPs, and the cached SRI hashes
+- Use an HTTPS certificate to encrypt traffic
+- Put the app behind a web application firewall (WAF), and firewall the database so only the app server can reach it
+
+## Pages
+
+Every page is a static HTML file in `app/public/html`, served through a clean URL
+in `app/server/routes/pages.js`. Guards run before the file is sent, so a page you
+aren't allowed to see redirects rather than flashing and then failing.
+
+| Page                                 | What's on it                                                    | Access                                                                             |
+| ------------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `/`                                  | Home. The feed of approved posts                                | Public                                                                             |
+| `/search?q=`                         | Results for a search across post titles and content             | Public                                                                             |
+| `/post/:id`                          | A single post and its comments                                  | Public once approved; pending and rejected posts only for their author or an admin |
+| `/post/new`                          | Write a post, optionally with an image                          | Signed in                                                                          |
+| `/post/:id/edit`                     | Edit or delete one of your own posts                            | Signed in; ownership is enforced when you save, not by the page guard              |
+| `/my-posts`                          | Your own posts, including the pending and rejected ones         | Signed in                                                                          |
+| `/profile`                           | Your bio, profile picture, and password change                  | Signed in                                                                          |
+| `/profile/:id`                       | Someone else's profile and their approved posts                 | Public                                                                             |
+| `/sign-in`                           | Email and password, behind Turnstile                            | Guests only, signed-in users are sent home                                         |
+| `/sign-up`                           | Registration                                                    | Guests only                                                                        |
+| `/sign-in/2fa`                       | Enter the 6-digit code emailed to admins                        | Needs a pending 2FA session, not a full one                                        |
+| `/sign-in/magic-link`                | Ask for a login link by email                                   | Guests only                                                                        |
+| `/sign-in/magic-link/confirm?token=` | Where the emailed link lands and trades its token for a session | Guests only                                                                        |
+| `/forgot-password`                   | Step one, request a reset code                                  | Guests only                                                                        |
+| `/forgot-password/code`              | Step two, enter that code                                       | Guests only                                                                        |
+| `/forgot-password/reset`             | Step three, pick the new password                               | Guests only                                                                        |
+| `/admin/approval`                    | The moderation queue. Approve or reject what's pending          | Admin                                                                              |
+| `/admin/users`                       | Every account, emails masked                                    | Admin                                                                              |
+| `/admin/logs`                        | Browse and filter the audit log, and verify the chain from here | Admin                                                                              |
+
+A few things outside the page router, all set up in `app/server/app.js`:
+
+- CSS, JS and images are served straight out of `app/public`
+- `/uploads` serves profile pictures and post images
+- `/html` returns 403 on purpose, so the raw files can't be reached around their guards
+- Anything else is a plain 404
+
+## API
+
+Everything below sits under `/api`. Responses are JSON. State-changing requests
+need an `x-csrf-token` header, which `GET /api/auth/me` hands out; the guest auth
+routes have no session to derive a token from, so they check the `Origin` header
+instead. Most write routes are rate limited.
+
+### Auth
+
+| Endpoint                                 | What it does                                                                                | Access              |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------- |
+| `GET /api/auth/me`                       | The current user and a fresh CSRF token, or nulls if you're a guest                         | Public              |
+| `POST /api/auth/register`                | Create an account. Needs a Turnstile token                                                  | Guests only         |
+| `POST /api/auth/login`                   | Email and password. Admins get a pending session and an emailed code rather than a real one | Guests only         |
+| `POST /api/auth/verify-2fa`              | Trade the 6-digit code for a full session. Three attempts, then you start over              | Pending 2FA session |
+| `POST /api/auth/logout`                  | Destroys the session server-side, not just the cookie                                       | Signed in           |
+| `POST /api/auth/forgot-password/request` | Emails a reset code                                                                         | Guests only         |
+| `POST /api/auth/forgot-password/verify`  | Checks that code and returns a short-lived reset token                                      | Guests only         |
+| `POST /api/auth/forgot-password/reset`   | Sets the new password and revokes every session                                             | Guests only         |
+| `POST /api/auth/magic-link/request`      | Emails a one-time login link. Refused for admins, as it would skip 2FA                      | Guests only         |
+| `POST /api/auth/magic-link/verify`       | Turns the token from that link into a session                                               | Guests only         |
+
+### Users
+
+| Endpoint                           | What it does                                                               | Access    |
+| ---------------------------------- | -------------------------------------------------------------------------- | --------- |
+| `GET /api/users`                   | Every account, emails masked, for the admin dashboard                      | Admin     |
+| `GET /api/users/:id`               | Public profile fields only. Never an email or the admin flag               | Public    |
+| `POST /api/users/bio`              | Update your own bio                                                        | Signed in |
+| `POST /api/users/password/request` | Current password in, emailed confirmation code out                         | Signed in |
+| `POST /api/users/password/confirm` | Finishes the change. Your other sessions are logged out, this one survives | Signed in |
+| `POST /api/users/upload-pfp`       | Multipart PNG, type read from magic bytes                                  | Signed in |
+
+### Posts and comments
+
+| Endpoint                                    | What it does                                                     | Access                                          |
+| ------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------- |
+| `GET /api/posts`                            | The approved feed                                                | Public                                          |
+| `GET /api/posts/search?q=`                  | Approved posts matching a query, title and content               | Public                                          |
+| `GET /api/posts/my`                         | All of your posts, whatever their status                         | Signed in                                       |
+| `GET /api/posts/user/:userId`               | One author's approved posts                                      | Public                                          |
+| `GET /api/posts/admin`                      | Every post on the site, any status                               | Admin                                           |
+| `GET /api/posts/:id`                        | A single post                                                    | Public once approved, otherwise author or admin |
+| `POST /api/posts`                           | Create a post. JSON, or multipart when there's an image attached | Signed in                                       |
+| `PUT /api/posts/:id`                        | Edit. Ownership is checked, admins override                      | Author or admin                                 |
+| `DELETE /api/posts/:id`                     | Delete, same ownership rules                                     | Author or admin                                 |
+| `PATCH /api/posts/:id/status`               | Approve or reject a pending post                                 | Admin                                           |
+| `GET /api/posts/:id/comments`               | Comments on a post, following that post's visibility             | Public once approved, otherwise author or admin |
+| `POST /api/posts/:id/comments`              | Comment on an approved post                                      | Signed in                                       |
+| `DELETE /api/posts/:id/comments/:commentId` | Remove your own comment, or any comment as an admin              | Author or admin                                 |
+
+### Audit log
+
+| Endpoint                                              | What it does                                                       | Access |
+| ----------------------------------------------------- | ------------------------------------------------------------------ | ------ |
+| `GET /api/logs?event_type=&actor_id=&from=&to=&page=` | Page through the audit log. Every filter is optional               | Admin  |
+| `POST /api/logs/verify`                               | Walks the hash chain and reports the first row that fails, and why | Admin  |
+
+## License
+
+Released under the [MIT License](LICENSE).
